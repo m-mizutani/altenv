@@ -1,3 +1,6 @@
 package main
 
-var ParseEnvFile = parseEnvFile // nolint
+var (
+	ParseEnvFile  = parseEnvFile  // nolint
+	ParseJSONFile = parseJSONFile // nolint
+)

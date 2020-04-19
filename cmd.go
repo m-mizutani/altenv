@@ -9,7 +9,8 @@ import (
 )
 
 type parameters struct {
-	EnvFile cli.StringSlice
+	EnvFiles  cli.StringSlice
+	JSONFiles cli.StringSlice
 
 	Profile    string
 	ConfigPath string
@@ -24,12 +25,23 @@ func run(params parameters, args []string) error {
 	var envvars []*envvar
 
 	// Read environment variables
-	if len(params.EnvFile.Value()) > 0 {
-		for _, fpath := range params.EnvFile.Value() {
+	if len(params.EnvFiles.Value()) > 0 {
+		for _, fpath := range params.EnvFiles.Value() {
 			logger.WithField("path", fpath).Debug("Read EnvFile")
 			vars, err := readEnvFile(fpath)
 			if err != nil {
 				return errors.Wrapf(err, "Fail to read EnvFile %s", fpath)
+			}
+			envvars = append(envvars, vars...)
+		}
+	}
+
+	if len(params.JSONFiles.Value()) > 0 {
+		for _, fpath := range params.JSONFiles.Value() {
+			logger.WithField("path", fpath).Debug("Read JSON file")
+			vars, err := readEnvFile(fpath)
+			if err != nil {
+				return errors.Wrapf(err, "Fail to read JSON file %s", fpath)
 			}
 			envvars = append(envvars, vars...)
 		}
@@ -62,10 +74,16 @@ func main() {
 		},
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:        "env",
+				Name:        "envfile",
 				Aliases:     []string{"e"},
 				Usage:       "Read from EnvVar file",
-				Destination: &params.EnvFile,
+				Destination: &params.EnvFiles,
+			},
+			&cli.StringSliceFlag{
+				Name:        "jsonfile",
+				Aliases:     []string{"j"},
+				Usage:       "Read from JSON file",
+				Destination: &params.JSONFiles,
 			},
 			&cli.StringFlag{
 				Name:        "log-level",
