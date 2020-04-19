@@ -1,3 +1,3 @@
 package main
 
-var ParseEnvFile = parseEnvFile
+var ParseEnvFile = parseEnvFile // nolint
