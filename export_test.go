@@ -5,6 +5,8 @@ import (
 	"io"
 	"io/ioutil"
 	"strings"
+
+	cli "github.com/urfave/cli/v2"
 )
 
 var (
@@ -14,12 +16,12 @@ var (
 
 type Parameters parameters
 
+func NewApp(params *Parameters) *cli.App {
+	return newApp((*parameters)(params))
+}
+
 func Run(params Parameters, args []string) error {
 	return run((parameters)(params), args)
-}
-func NewParameters() Parameters {
-	params := newParameters()
-	return (Parameters)(params)
 }
 
 func ToReadCloser(s string) io.ReadCloser {

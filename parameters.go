@@ -21,6 +21,7 @@ type parameters struct {
 	ConfigPath string
 	LogLevel   string
 
+	// For testing
 	DryRun       bool
 	DryRunOutput io.Writer
 	OpenFunc     fileOpen

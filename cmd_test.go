@@ -11,7 +11,6 @@ import (
 	. "github.com/m-mizutani/altenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
-	cli "github.com/urfave/cli/v2"
 )
 
 func toEnvVars(buf *bytes.Buffer) map[string]string { // nolint
@@ -25,31 +24,34 @@ func toEnvVars(buf *bytes.Buffer) map[string]string { // nolint
 	return envmap
 }
 
-func makeParameters(buf *bytes.Buffer) Parameters {
-	params := NewParameters()
-	params.DryRun = true
-	params.DryRunOutput = buf
-	params.LogLevel = "info"
-	params.OpenFunc = func(fname string) (io.ReadCloser, error) {
-		switch fname {
-		case "my.env":
-			return ToReadCloser("COLOR=BLUE"), nil
-		case "my.json":
-			return ToReadCloser(`{"MAGIC":"5"}`), nil
-		default:
-			return nil, fmt.Errorf("File not found")
-		}
+func makeParameters(buf *bytes.Buffer) *Parameters {
+	params := &Parameters{
+		DryRunOutput: buf,
+		OpenFunc: func(fname string) (io.ReadCloser, error) {
+			switch fname {
+			case "my.env":
+				return ToReadCloser("COLOR=BLUE"), nil
+			case "my.json":
+				return ToReadCloser(`{"MAGIC":"5"}`), nil
+			default:
+				return nil, fmt.Errorf("File not found (testing)")
+			}
+		},
 	}
 
 	return params
 }
 
+func newArgs(args ...string) []string {
+	base := []string{"altenv", "--dryrun"}
+	return append(base, args...)
+}
+
 func TestCommandEnvFile(t *testing.T) {
 	buf := bytes.Buffer{}
-	params := makeParameters(&buf)
+	app := NewApp(makeParameters(&buf))
 
-	params.EnvFiles = *cli.NewStringSlice("my.env")
-	err := Run(params, []string{})
+	err := app.Run(newArgs("-e", "my.env"))
 	require.NoError(t, err)
 
 	envmap := toEnvVars(&buf)
@@ -60,10 +62,9 @@ func TestCommandEnvFile(t *testing.T) {
 
 func TestCommandJSONFile(t *testing.T) {
 	buf := bytes.Buffer{}
-	params := makeParameters(&buf)
+	app := NewApp(makeParameters(&buf))
 
-	params.JSONFiles = *cli.NewStringSlice("my.json")
-	err := Run(params, []string{})
+	err := app.Run(newArgs("-j", "my.json"))
 	require.NoError(t, err)
 
 	envmap := toEnvVars(&buf)
@@ -74,11 +75,9 @@ func TestCommandJSONFile(t *testing.T) {
 
 func TestCommandMixFiles(t *testing.T) {
 	buf := bytes.Buffer{}
-	params := makeParameters(&buf)
+	app := NewApp(makeParameters(&buf))
 
-	params.JSONFiles = *cli.NewStringSlice("my.json")
-	params.EnvFiles = *cli.NewStringSlice("my.env")
-	err := Run(params, []string{})
+	err := app.Run(newArgs("-j", "my.json", "-e", "my.env"))
 	require.NoError(t, err)
 
 	envmap := toEnvVars(&buf)
@@ -86,4 +85,20 @@ func TestCommandMixFiles(t *testing.T) {
 	assert.Equal(t, "BLUE", envmap["COLOR"])
 	assert.Contains(t, envmap, "MAGIC")
 	assert.Equal(t, "5", envmap["MAGIC"])
+}
+
+func TestCommandEnvFileNotFound(t *testing.T) {
+	buf := bytes.Buffer{}
+	app := NewApp(makeParameters(&buf))
+
+	err := app.Run(newArgs("-j", "my.json", "-e", "bad.env"))
+	require.Error(t, err)
+}
+
+func TestCommandJSONFileNotFound(t *testing.T) {
+	buf := bytes.Buffer{}
+	app := NewApp(makeParameters(&buf))
+
+	err := app.Run(newArgs("-j", "bad.json", "-e", "my.env"))
+	require.Error(t, err)
 }

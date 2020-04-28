@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	"path/filepath"
 
@@ -9,6 +8,8 @@ import (
 	"github.com/sirupsen/logrus"
 	cli "github.com/urfave/cli/v2"
 )
+
+var defaultConfigPath = filepath.Join(os.Getenv("HOME"), ".altenv")
 
 func run(params parameters, args []string) error {
 	if err := setLogLevel(params.LogLevel); err != nil {
@@ -64,9 +65,7 @@ func run(params parameters, args []string) error {
 	return nil
 }
 
-func main() {
-	params := newParameters()
-
+func newApp(params *parameters) *cli.App {
 	app := &cli.App{
 		Name:  "altenv",
 		Usage: "CLI Environment Variable Controller",
@@ -76,8 +75,8 @@ func main() {
 				args = append(args, c.Args().Get(i))
 			}
 
-			if err := run(params, args); err != nil {
-				logger.WithError(err).Fatal("Failed")
+			if err := run(*params, args); err != nil {
+				return err
 			}
 			return nil
 		},
@@ -107,7 +106,7 @@ func main() {
 				Aliases:     []string{"c"},
 				Usage:       "Config file",
 				Destination: &params.ConfigPath,
-				Value:       filepath.Join(os.Getenv("HOME"), ".altenv"),
+				Value:       defaultConfigPath,
 			},
 			&cli.BoolFlag{
 				Name:        "dryrun",
@@ -125,8 +124,15 @@ func main() {
 		},
 	}
 
+	return app
+}
+
+func main() {
+	params := newParameters()
+	app := newApp(&params)
+
 	err := app.Run(os.Args)
 	if err != nil {
-		log.Fatal(err)
+		logger.WithError(err).Fatal("altenv failed")
 	}
 }

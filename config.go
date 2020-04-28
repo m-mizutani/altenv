@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"io"
 	"os"
 
@@ -11,6 +12,11 @@ import (
 func loadConfigFile(path string, params *parameters) error {
 	fd, err := os.Open(path)
 	if os.IsNotExist(err) {
+		// Ignore if path is default
+		if path != defaultConfigPath {
+			return fmt.Errorf("Config file is not found: %s", path)
+		}
+
 		logger.WithField("path", path).Debug("Config file does not exist")
 		return nil
 	} else if err != nil {
