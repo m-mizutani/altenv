@@ -3,8 +3,8 @@ package main_test
 import (
 	"bufio"
 	"bytes"
-	"fmt"
 	"io"
+	"os"
 	"strings"
 	"testing"
 
@@ -38,7 +38,7 @@ func makeParameters(buf *bytes.Buffer) *Parameters {
 			case "my2.json":
 				return ToReadCloser(`{"COLOR":"orange"}`), nil
 			default:
-				return nil, fmt.Errorf("File not found (testing)")
+				return nil, os.ErrNotExist
 			}
 		},
 	}
