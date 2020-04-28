@@ -9,6 +9,8 @@ import (
 	cli "github.com/urfave/cli/v2"
 )
 
+const altenvVersion = "0.0.1"
+
 var defaultConfigPath = filepath.Join(os.Getenv("HOME"), ".altenv")
 
 func run(params parameters, args []string) error {
@@ -67,8 +69,9 @@ func run(params parameters, args []string) error {
 
 func newApp(params *parameters) *cli.App {
 	app := &cli.App{
-		Name:  "altenv",
-		Usage: "Powerful CLI Environment Variable Manager",
+		Name:    "altenv",
+		Usage:   "Powerful CLI Environment Variable Manager",
+		Version: altenvVersion,
 		Action: func(c *cli.Context) error {
 			var args []string
 			for i := 0; i < c.Args().Len(); i++ {

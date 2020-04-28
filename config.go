@@ -10,7 +10,7 @@ import (
 
 // loadConfigFile reads config from path and update params. It's destructive function.
 func loadConfigFile(path string, params *parameters) error {
-	fd, err := os.Open(path)
+	fd, err := params.OpenFunc(path)
 	if os.IsNotExist(err) {
 		// Ignore if path is default
 		if path != defaultConfigPath {
