@@ -31,8 +31,12 @@ func makeParameters(buf *bytes.Buffer) *Parameters {
 			switch fname {
 			case "my.env":
 				return ToReadCloser("COLOR=BLUE"), nil
+			case "my2.env":
+				return ToReadCloser("COSMOS=STARS"), nil
 			case "my.json":
 				return ToReadCloser(`{"MAGIC":"5"}`), nil
+			case "my2.json":
+				return ToReadCloser(`{"COLOR":"orange"}`), nil
 			default:
 				return nil, fmt.Errorf("File not found (testing)")
 			}
@@ -85,6 +89,34 @@ func TestCommandMixFiles(t *testing.T) {
 	assert.Equal(t, "BLUE", envmap["COLOR"])
 	assert.Contains(t, envmap, "MAGIC")
 	assert.Equal(t, "5", envmap["MAGIC"])
+}
+
+func TestCommandMixMultipleJSONFiles(t *testing.T) {
+	buf := bytes.Buffer{}
+	app := NewApp(makeParameters(&buf))
+
+	err := app.Run(newArgs("-j", "my.json", "-j", "my2.json"))
+	require.NoError(t, err)
+
+	envmap := toEnvVars(&buf)
+	assert.Contains(t, envmap, "MAGIC")
+	assert.Equal(t, "5", envmap["MAGIC"])
+	assert.Contains(t, envmap, "COLOR")
+	assert.Equal(t, "orange", envmap["COLOR"])
+}
+
+func TestCommandMixMultipleEnvFiles(t *testing.T) {
+	buf := bytes.Buffer{}
+	app := NewApp(makeParameters(&buf))
+
+	err := app.Run(newArgs("-e", "my.env", "-e", "my2.env"))
+	require.NoError(t, err)
+
+	envmap := toEnvVars(&buf)
+	assert.Contains(t, envmap, "COLOR")
+	assert.Equal(t, "BLUE", envmap["COLOR"])
+	assert.Contains(t, envmap, "COSMOS")
+	assert.Equal(t, "STARS", envmap["COSMOS"])
 }
 
 func TestCommandEnvFileNotFound(t *testing.T) {
