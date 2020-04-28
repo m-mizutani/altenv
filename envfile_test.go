@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	. "github.com/m-mizutani/envctl"
+	. "github.com/m-mizutani/altenv"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

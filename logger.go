@@ -15,7 +15,7 @@ func (x *loggerHook) Levels() []logrus.Level {
 	return logrus.AllLevels
 }
 func (x *loggerHook) Fire(entry *logrus.Entry) error {
-	entry.Message = fmt.Sprintf("[envctl] %s", entry.Message)
+	entry.Message = fmt.Sprintf("[altenv] %s", entry.Message)
 	return nil
 }
 

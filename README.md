@@ -1,4 +1,4 @@
-# envctl [![Travis-CI](https://travis-ci.org/m-mizutani/envctl.svg)](https://travis-ci.org/m-mizutani/envctl) [![Report card](https://goreportcard.com/badge/github.com/m-mizutani/envctl)](https://goreportcard.com/report/github.com/m-mizutani/envctl)
+# altenv [![Travis-CI](https://travis-ci.org/m-mizutani/altenv.svg)](https://travis-ci.org/m-mizutani/altenv) [![Report card](https://goreportcard.com/badge/github.com/m-mizutani/altenv)](https://goreportcard.com/report/github.com/m-mizutani/altenv)
 
 CLI Environment Variable Controller in Go
 
@@ -8,14 +8,14 @@ DB_NAME = AWESOME_DATABASE
 $ cat sample.py
 import os
 print("my database is {0}".format(os.environ["DB_NAME"]))
-$ envctl -e setting.env python sample.py
+$ altenv -e setting.env python sample.py
 my database is AWESOME_DATABASE
 ```
 
 ## Install
 
 ```
-$ go get -u github.com/m-mizutani/envctl
+$ go get -u github.com/m-mizutani/altenv
 ```
 
 ## Usage
@@ -30,7 +30,7 @@ KEY2 = BCD
 ```
 
 ```sh
-$ envctl -e yourfile.env <command> [arg1, [arg2, [...]]]
+$ altenv -e yourfile.env <command> [arg1, [arg2, [...]]]
 ```
 
 ### Read variables from JSON file
@@ -44,7 +44,7 @@ Sample `yourfile.json`. JSON file must be map format with pairs of key(string) a
 ```
 
 ```sh
-$ envctl -e yourfile.json <command> [arg1, [arg2, [...]]]
+$ altenv -j yourfile.json <command> [arg1, [arg2, [...]]]
 ```
 
 ## License

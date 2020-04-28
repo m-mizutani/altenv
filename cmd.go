@@ -3,8 +3,10 @@ package main
 import (
 	"log"
 	"os"
+	"path/filepath"
 
 	"github.com/pkg/errors"
+	"github.com/sirupsen/logrus"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -19,6 +21,15 @@ type parameters struct {
 
 func run(params parameters, args []string) error {
 	if err := setLogLevel(params.LogLevel); err != nil {
+		return err
+	}
+
+	logger.WithFields(logrus.Fields{
+		"params": params,
+		"args":   args,
+	}).Debug("Run altenv")
+
+	if err := loadConfigFile(params.ConfigPath, &params); err != nil {
 		return err
 	}
 
@@ -39,7 +50,7 @@ func run(params parameters, args []string) error {
 	if len(params.JSONFiles.Value()) > 0 {
 		for _, fpath := range params.JSONFiles.Value() {
 			logger.WithField("path", fpath).Debug("Read JSON file")
-			vars, err := readEnvFile(fpath)
+			vars, err := readJSONFile(fpath)
 			if err != nil {
 				return errors.Wrapf(err, "Fail to read JSON file %s", fpath)
 			}
@@ -59,7 +70,7 @@ func main() {
 	var params parameters
 
 	app := &cli.App{
-		Name:  "envctl",
+		Name:  "altenv",
 		Usage: "CLI Environment Variable Controller",
 		Action: func(c *cli.Context) error {
 			var args []string
@@ -85,12 +96,20 @@ func main() {
 				Usage:       "Read from JSON file",
 				Destination: &params.JSONFiles,
 			},
+
 			&cli.StringFlag{
 				Name:        "log-level",
 				Aliases:     []string{"l"},
 				Usage:       "Set log level [trace|debug|info|warn|error|fatal]",
 				Destination: &params.LogLevel,
 				Value:       "info",
+			},
+			&cli.StringFlag{
+				Name:        "config",
+				Aliases:     []string{"c"},
+				Usage:       "Config file",
+				Destination: &params.ConfigPath,
+				Value:       filepath.Join(os.Getenv("HOME"), ".altenv"),
 			},
 			/*
 				&cli.StringFlag{
