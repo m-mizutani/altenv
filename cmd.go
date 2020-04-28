@@ -82,13 +82,13 @@ func newApp(params *parameters) *cli.App {
 		},
 		Flags: []cli.Flag{
 			&cli.StringSliceFlag{
-				Name:        "envfile",
+				Name:        "env",
 				Aliases:     []string{"e"},
 				Usage:       "Read from EnvVar file",
 				Destination: &params.EnvFiles,
 			},
 			&cli.StringSliceFlag{
-				Name:        "jsonfile",
+				Name:        "json",
 				Aliases:     []string{"j"},
 				Usage:       "Read from JSON file",
 				Destination: &params.JSONFiles,
