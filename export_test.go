@@ -1,3 +1,4 @@
+//nolint
 package main
 
 import (
@@ -7,8 +8,8 @@ import (
 )
 
 var (
-	ReadEnvFile  = readEnvFile  // nolint
-	ReadJSONFile = readJSONFile // nolint
+	ReadEnvFile  = readEnvFile
+	ReadJSONFile = readJSONFile
 )
 
 type Parameters parameters
@@ -21,6 +22,6 @@ func NewParameters() Parameters {
 	return (Parameters)(params)
 }
 
-func ToReadCloser(s string) io.ReadCloser { // nolint
+func ToReadCloser(s string) io.ReadCloser {
 	return ioutil.NopCloser(strings.NewReader(s))
 }
