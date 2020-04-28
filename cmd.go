@@ -1,7 +1,6 @@
 package main
 
 import (
-	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -10,18 +9,6 @@ import (
 	"github.com/sirupsen/logrus"
 	cli "github.com/urfave/cli/v2"
 )
-
-type parameters struct {
-	EnvFiles  cli.StringSlice
-	JSONFiles cli.StringSlice
-
-	Profile    string
-	ConfigPath string
-	LogLevel   string
-
-	DryRun       bool
-	DryRunOutput io.Writer
-}
 
 func run(params parameters, args []string) error {
 	if err := setLogLevel(params.LogLevel); err != nil {
@@ -43,7 +30,7 @@ func run(params parameters, args []string) error {
 	if len(params.EnvFiles.Value()) > 0 {
 		for _, fpath := range params.EnvFiles.Value() {
 			logger.WithField("path", fpath).Debug("Read EnvFile")
-			vars, err := readEnvFile(fpath)
+			vars, err := readEnvFile(fpath, params.OpenFunc)
 			if err != nil {
 				return errors.Wrapf(err, "Fail to read EnvFile %s", fpath)
 			}
@@ -54,7 +41,7 @@ func run(params parameters, args []string) error {
 	if len(params.JSONFiles.Value()) > 0 {
 		for _, fpath := range params.JSONFiles.Value() {
 			logger.WithField("path", fpath).Debug("Read JSON file")
-			vars, err := readJSONFile(fpath)
+			vars, err := readJSONFile(fpath, params.OpenFunc)
 			if err != nil {
 				return errors.Wrapf(err, "Fail to read JSON file %s", fpath)
 			}
@@ -78,9 +65,7 @@ func run(params parameters, args []string) error {
 }
 
 func main() {
-	params := parameters{
-		DryRunOutput: os.Stdout,
-	}
+	params := newParameters()
 
 	app := &cli.App{
 		Name:  "altenv",

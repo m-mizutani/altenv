@@ -1,7 +1,7 @@
 package main_test
 
 import (
-	"bytes"
+	"io"
 	"sort"
 	"testing"
 
@@ -16,8 +16,15 @@ func TestJSONFile(t *testing.T) {
 		"WORD": "FIVE"
 	}`
 
-	envvars, err := ParseJSONFile(bytes.NewReader([]byte(data)))
+	var openFileName string
+	dummyOpen := func(fname string) (io.ReadCloser, error) {
+		openFileName = fname
+		return ToReadCloser(data), nil
+	}
+
+	envvars, err := ReadJSONFile("mytest.json", dummyOpen)
 	require.NoError(t, err)
+	assert.Equal(t, "mytest.json", openFileName)
 	assert.Equal(t, 2, len(envvars))
 
 	sort.Slice(envvars, func(i, j int) bool {
@@ -35,7 +42,9 @@ func TestJSONFileError(t *testing.T) {
 		"WORD": "FIVE",
 	}` // invalid comma in third line
 
-	envvars, err := ParseJSONFile(bytes.NewReader([]byte(data)))
+	envvars, err := ReadJSONFile("mytest.json", func(string) (io.ReadCloser, error) {
+		return ToReadCloser(data), nil
+	})
 	require.Error(t, err)
 	assert.Nil(t, envvars)
 }

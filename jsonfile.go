@@ -2,23 +2,17 @@ package main
 
 import (
 	"encoding/json"
-	"io"
-	"os"
 
 	"github.com/sirupsen/logrus"
 )
 
-func readJSONFile(fpath string) ([]*envvar, error) {
-	fd, err := os.Open(fpath)
+func readJSONFile(fpath string, open fileOpen) ([]*envvar, error) {
+	fd, err := open(fpath)
 	if err != nil {
 		return nil, err
 	}
 	defer fd.Close()
 
-	return parseJSONFile(fd)
-}
-
-func parseJSONFile(fd io.Reader) ([]*envvar, error) {
 	var jdata map[string]string
 
 	if err := json.NewDecoder(fd).Decode(&jdata); err != nil {

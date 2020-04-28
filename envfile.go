@@ -3,24 +3,18 @@ package main
 import (
 	"bufio"
 	"fmt"
-	"io"
-	"os"
 	"strings"
 
 	"github.com/sirupsen/logrus"
 )
 
-func readEnvFile(fpath string) ([]*envvar, error) {
-	fd, err := os.Open(fpath)
+func readEnvFile(fpath string, open fileOpen) ([]*envvar, error) {
+	fd, err := open(fpath)
 	if err != nil {
 		return nil, err
 	}
 	defer fd.Close()
 
-	return parseEnvFile(fd)
-}
-
-func parseEnvFile(fd io.Reader) ([]*envvar, error) {
 	var envvars []*envvar
 	scanner := bufio.NewScanner(fd)
 	lineNo := 0

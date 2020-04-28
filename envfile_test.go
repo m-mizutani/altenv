@@ -1,7 +1,7 @@
 package main_test
 
 import (
-	"bytes"
+	"io"
 	"strings"
 	"testing"
 
@@ -20,8 +20,14 @@ func TestEnvFile(t *testing.T) {
 		"W3 = SPELLBOUND=NIGHT", // should be imported including sencond '='
 	}, "\n")
 
-	envvars, err := ParseEnvFile(bytes.NewReader([]byte(data)))
+	var openFileName string
+	dummyOpen := func(fname string) (io.ReadCloser, error) {
+		openFileName = fname
+		return ToReadCloser(data), nil
+	}
+	envvars, err := ReadEnvFile("mytest.env", dummyOpen)
 	require.NoError(t, err)
+	assert.Equal(t, "mytest.env", openFileName)
 	assert.Equal(t, 4, len(envvars))
 
 	assert.Equal(t, "COLOR", envvars[0].Key)
@@ -39,7 +45,8 @@ func TestEnvFile(t *testing.T) {
 
 func TestEnvFileError(t *testing.T) {
 	data := "W1XXXX" // No '='
-	ret, err := ParseEnvFile(bytes.NewReader([]byte(data)))
+	dummyOpen := func(fname string) (io.ReadCloser, error) { return ToReadCloser(data), nil }
+	ret, err := ReadEnvFile("test", dummyOpen)
 	assert.Error(t, err)
 	assert.Nil(t, ret)
 }
