@@ -68,7 +68,7 @@ func run(params parameters, args []string) error {
 func newApp(params *parameters) *cli.App {
 	app := &cli.App{
 		Name:  "altenv",
-		Usage: "CLI Environment Variable Controller",
+		Usage: "Powerful CLI Environment Variable Manager",
 		Action: func(c *cli.Context) error {
 			var args []string
 			for i := 0; i < c.Args().Len(); i++ {
