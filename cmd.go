@@ -1,6 +1,7 @@
 package main
 
 import (
+	"io"
 	"log"
 	"os"
 	"path/filepath"
@@ -17,6 +18,9 @@ type parameters struct {
 	Profile    string
 	ConfigPath string
 	LogLevel   string
+
+	DryRun       bool
+	DryRunOutput io.Writer
 }
 
 func run(params parameters, args []string) error {
@@ -58,16 +62,25 @@ func run(params parameters, args []string) error {
 		}
 	}
 
-	// Execute command
-	if err := execCommand(envvars, args); err != nil {
-		return err
+	if params.DryRun {
+		// Dryrun
+		if err := dumpEnvVars(params.DryRunOutput, envvars); err != nil {
+			return err
+		}
+	} else {
+		// Execute command
+		if err := execCommand(envvars, args); err != nil {
+			return err
+		}
 	}
 
 	return nil
 }
 
 func main() {
-	var params parameters
+	params := parameters{
+		DryRunOutput: os.Stdout,
+	}
 
 	app := &cli.App{
 		Name:  "altenv",
@@ -110,6 +123,11 @@ func main() {
 				Usage:       "Config file",
 				Destination: &params.ConfigPath,
 				Value:       filepath.Join(os.Getenv("HOME"), ".altenv"),
+			},
+			&cli.BoolFlag{
+				Name:        "dryrun",
+				Usage:       "Enable dryrun mode",
+				Destination: &params.DryRun,
 			},
 			/*
 				&cli.StringFlag{
