@@ -9,7 +9,10 @@ import (
 	cli "github.com/urfave/cli/v2"
 )
 
-const altenvVersion = "0.0.1"
+const (
+	altenvVersion      = "0.0.1"
+	defaultProfileName = "default"
+)
 
 var defaultConfigPath = filepath.Join(os.Getenv("HOME"), ".altenv")
 
@@ -116,14 +119,14 @@ func newApp(params *parameters) *cli.App {
 				Usage:       "Enable dryrun mode",
 				Destination: &params.DryRun,
 			},
-			/*
-				&cli.StringFlag{
-					Name:        "profile",
-					Aliases:     []string{"p"},
-					Usage:       "Use profile",
-					Destination: &args.EnvFile,
-				},
-			*/
+
+			&cli.StringFlag{
+				Name:        "profile",
+				Aliases:     []string{"p"},
+				Usage:       "Use profile",
+				Destination: &params.Profile,
+				Value:       defaultProfileName,
+			},
 		},
 	}
 

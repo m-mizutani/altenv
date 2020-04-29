@@ -3,8 +3,10 @@ package main
 import (
 	"fmt"
 	"io"
+	"io/ioutil"
 	"os"
 
+	toml "github.com/pelletier/go-toml"
 	"github.com/pkg/errors"
 )
 
@@ -27,6 +29,52 @@ func loadConfigFile(path string, params *parameters) error {
 	return parseConfigFile(fd, params)
 }
 
+type envFileConfig struct {
+	Path string `toml:"path"`
+}
+
+type jsonFileConfig struct {
+	Path string `toml:"path"`
+}
+
+type profileConfig struct {
+	EnvFiles  []envFileConfig  `toml:"envfile"`
+	JSONFiles []jsonFileConfig `toml:"jsonfile"`
+}
+
+type altenvConfig struct {
+	Global   profileConfig            `toml:"global"`
+	Profiles map[string]profileConfig `toml:"profile"`
+}
+
+func applyProfileToParameters(profile profileConfig, params *parameters) {
+	for _, envConfig := range profile.EnvFiles {
+		params.EnvFiles.Set(envConfig.Path)
+	}
+}
+
 func parseConfigFile(fd io.Reader, params *parameters) error {
+	var config altenvConfig
+	raw, err := ioutil.ReadAll(fd)
+	if err != nil {
+		return errors.Wrap(err, "Fail to read data from config file")
+	}
+
+	if err := toml.Unmarshal(raw, &config); err != nil {
+		return errors.Wrap(err, "Fail to parse toml config file")
+	}
+
+	profile, ok := config.Profiles[params.Profile]
+	if !ok {
+		if defaultProfileName == params.Profile {
+			logger.Debug("profile is default, but no default profile in config")
+			return nil
+		}
+		return fmt.Errorf("profile `%s` is not found in config file", params.Profile)
+	}
+
+	applyProfileToParameters(config.Global, params)
+	applyProfileToParameters(profile, params)
+
 	return nil
 }
