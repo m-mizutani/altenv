@@ -5,8 +5,20 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 )
+
+func parseDefine(s string) (*envvar, error) {
+	rows := strings.Split(s, "=")
+	if len(rows) < 2 {
+		return nil, fmt.Errorf("Invalid format: '%s'", s)
+	}
+
+	key := strings.TrimSpace(rows[0])
+	value := strings.TrimSpace(strings.Join(rows[1:], "="))
+	return &envvar{Key: key, Value: value}, nil
+}
 
 func readEnvFile(fpath string, open fileOpen) ([]*envvar, error) {
 	fd, err := open(fpath)
@@ -28,19 +40,16 @@ func readEnvFile(fpath string, open fileOpen) ([]*envvar, error) {
 			continue // comment out
 		}
 
-		rows := strings.Split(line, "=")
-		if len(rows) < 2 {
-			return nil, fmt.Errorf("Invalid format: '%s' at line %d", line, lineNo)
+		v, err := parseDefine(line)
+		if err != nil {
+			return nil, errors.Wrapf(err, "Fail parse envfile at line %d", lineNo)
 		}
-
-		key := strings.TrimSpace(rows[0])
-		value := strings.TrimSpace(strings.Join(rows[1:], "="))
-		envvars = append(envvars, &envvar{Key: key, Value: value})
+		envvars = append(envvars, v)
 
 		logger.WithFields(logrus.Fields{
 			"type":  "envfile",
-			"key":   key,
-			"value": value,
+			"key":   v.Key,
+			"value": v.Value,
 		}).Debug("Add a new variable")
 	}
 

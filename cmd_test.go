@@ -136,6 +136,18 @@ func TestCommandJSONFileNotFound(t *testing.T) {
 	require.Error(t, err)
 }
 
+func TestCommandDefine(t *testing.T) {
+	buf := bytes.Buffer{}
+	app := NewApp(makeParameters(&buf))
+
+	err := app.Run(newArgs("-s", "COLOR=BLUE", "-s", "NOT=SANE"))
+	require.NoError(t, err)
+
+	envmap := toEnvVars(&buf)
+	assert.Equal(t, "BLUE", envmap["COLOR"])
+	assert.Equal(t, "SANE", envmap["NOT"])
+}
+
 func newConfigTestApp(buf *bytes.Buffer) *cli.App {
 	configData := `
 [global]

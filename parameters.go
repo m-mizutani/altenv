@@ -16,6 +16,7 @@ func wrapOSOpen(name string) (io.ReadCloser, error) {
 type parameters struct {
 	EnvFiles  cli.StringSlice
 	JSONFiles cli.StringSlice
+	Defines   cli.StringSlice
 
 	Profile    string
 	ConfigPath string

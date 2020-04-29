@@ -55,6 +55,15 @@ func run(params parameters, args []string) error {
 		}
 	}
 
+	for _, def := range params.Defines.Value() {
+		logger.WithField("define", def).Debug("Set temp variables")
+		v, err := parseDefine(def)
+		if err != nil {
+			return err
+		}
+		envvars = append(envvars, v)
+	}
+
 	if params.DryRun {
 		// Dryrun
 		if err := dumpEnvVars(params.DryRunOutput, envvars); err != nil {
@@ -98,6 +107,12 @@ func newApp(params *parameters) *cli.App {
 				Aliases:     []string{"j"},
 				Usage:       "Read from JSON file",
 				Destination: &params.JSONFiles,
+			},
+			&cli.StringSliceFlag{
+				Name:        "set",
+				Aliases:     []string{"s"},
+				Usage:       "Set environment variable by FOO=BAR format",
+				Destination: &params.Defines,
 			},
 
 			&cli.StringFlag{
