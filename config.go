@@ -47,10 +47,13 @@ type altenvConfig struct {
 	Profiles map[string]profileConfig `toml:"profile"`
 }
 
-func applyProfileToParameters(profile profileConfig, params *parameters) {
+func applyProfileToParameters(profile profileConfig, params *parameters) error {
 	for _, envConfig := range profile.EnvFiles {
-		params.EnvFiles.Set(envConfig.Path)
+		if err := params.EnvFiles.Set(envConfig.Path); err != nil {
+			return errors.Wrap(err, "Fail to set envfile config")
+		}
 	}
+	return nil
 }
 
 func parseConfigFile(fd io.Reader, params *parameters) error {
@@ -73,8 +76,12 @@ func parseConfigFile(fd io.Reader, params *parameters) error {
 		return fmt.Errorf("profile `%s` is not found in config file", params.Profile)
 	}
 
-	applyProfileToParameters(config.Global, params)
-	applyProfileToParameters(profile, params)
+	if err := applyProfileToParameters(config.Global, params); err != nil {
+		return err
+	}
+	if err := applyProfileToParameters(profile, params); err != nil {
+		return err
+	}
 
 	return nil
 }
