@@ -140,7 +140,7 @@ func TestCommandDefine(t *testing.T) {
 	buf := bytes.Buffer{}
 	app := NewApp(makeParameters(&buf))
 
-	err := app.Run(newArgs("-s", "COLOR=BLUE", "-s", "NOT=SANE"))
+	err := app.Run(newArgs("-d", "COLOR=BLUE", "-d", "NOT=SANE"))
 	require.NoError(t, err)
 
 	envmap := toEnvVars(&buf)

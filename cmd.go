@@ -109,8 +109,8 @@ func newApp(params *parameters) *cli.App {
 				Destination: &params.JSONFiles,
 			},
 			&cli.StringSliceFlag{
-				Name:        "set",
-				Aliases:     []string{"s"},
+				Name:        "define",
+				Aliases:     []string{"d"},
 				Usage:       "Set environment variable by FOO=BAR format",
 				Destination: &params.Defines,
 			},
