@@ -25,43 +25,46 @@ func run(params parameters, args []string) error {
 		"params": params,
 		"args":   args,
 	}).Debug("Run altenv")
+	config := parametersToConfig(params)
 
-	if err := loadConfigFile(params.ConfigPath, &params); err != nil {
+	loadConfig, err := loadConfigFile(params.ConfigPath, params.Profile, params.OpenFunc)
+	if err != nil {
 		return err
+	}
+	if loadConfig != nil {
+		config.merge(*loadConfig)
 	}
 
 	var envvars []*envvar
 
 	// Read environment variables
-	if len(params.EnvFiles.Value()) > 0 {
-		for _, fpath := range params.EnvFiles.Value() {
-			logger.WithField("path", fpath).Debug("Read EnvFile")
-			vars, err := readEnvFile(fpath, params.OpenFunc)
-			if err != nil {
-				return errors.Wrapf(err, "Fail to read EnvFile %s", fpath)
-			}
-			envvars = append(envvars, vars...)
-		}
-	}
-
-	if len(params.JSONFiles.Value()) > 0 {
-		for _, fpath := range params.JSONFiles.Value() {
-			logger.WithField("path", fpath).Debug("Read JSON file")
-			vars, err := readJSONFile(fpath, params.OpenFunc)
-			if err != nil {
-				return errors.Wrapf(err, "Fail to read JSON file %s", fpath)
-			}
-			envvars = append(envvars, vars...)
-		}
-	}
-
-	for _, def := range params.Defines.Value() {
-		logger.WithField("define", def).Debug("Set temp variables")
-		v, err := parseDefine(def)
+	for _, f := range config.EnvFiles {
+		logger.WithField("path", f.Path).Debug("Read EnvFile")
+		vars, err := readEnvFile(f.Path, params.OpenFunc)
 		if err != nil {
-			return err
+			return errors.Wrapf(err, "Fail to read EnvFile %s", f.Path)
 		}
-		envvars = append(envvars, v)
+		envvars = append(envvars, vars...)
+	}
+
+	for _, f := range config.JSONFiles {
+		logger.WithField("path", f.Path).Debug("Read JSON file")
+		vars, err := readJSONFile(f.Path, params.OpenFunc)
+		if err != nil {
+			return errors.Wrapf(err, "Fail to read JSON file %s", f.Path)
+		}
+		envvars = append(envvars, vars...)
+	}
+
+	for _, def := range config.Defines {
+		for _, vdef := range def.Vars {
+			logger.WithField("define", vdef).Debug("Set temp variables")
+			v, err := parseDefine(vdef)
+			if err != nil {
+				return err
+			}
+			envvars = append(envvars, v)
+		}
 	}
 
 	if params.DryRun {
