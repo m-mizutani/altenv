@@ -82,15 +82,6 @@ func parametersToConfig(params parameters) *altenvConfig {
 	return config
 }
 
-func applyProfileToParameters(profile altenvConfig, params *parameters) error {
-	for _, envConfig := range profile.EnvFiles {
-		if err := params.EnvFiles.Set(envConfig.Path); err != nil {
-			return errors.Wrap(err, "Fail to set envfile config")
-		}
-	}
-	return nil
-}
-
 func parseConfigFile(fd io.Reader, profile string) (*altenvConfig, error) {
 	var fileCfg configFile
 	var config altenvConfig
