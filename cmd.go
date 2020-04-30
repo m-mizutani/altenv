@@ -44,7 +44,11 @@ func run(params parameters, args []string) error {
 	}
 
 	// Setup environment variables
-	envvars, err := loadEnvVars(masterConfig, params.OpenFunc)
+	envvars, err := loadEnvVars(loadEnvVarsArgs{
+		config:    masterConfig,
+		openFunc:  params.OpenFunc,
+		inputFunc: params.InputFunc,
+	})
 	if err != nil {
 		return err
 	}
@@ -101,6 +105,11 @@ func newApp(params *parameters) *cli.App {
 				Aliases:     []string{"d"},
 				Usage:       "Set environment variable by FOO=BAR format",
 				Destination: &params.Defines,
+			},
+			&cli.StringFlag{
+				Name:        "prompt",
+				Usage:       "Set a variable by prompt. Try --prompt FOO -r dryrun",
+				Destination: &params.Prompt,
 			},
 
 			&cli.StringFlag{

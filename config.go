@@ -77,6 +77,7 @@ type altenvConfig struct {
 	EnvFiles  []*envFileConfig  `toml:"envfile"`
 	JSONFiles []*jsonFileConfig `toml:"jsonfile"`
 	Defines   []*defineConfig   `toml:"define"`
+	Prompt    string            `toml:"-"` // not available in toml
 	Overwrite *string           `toml:"overwrite"`
 
 	overwrite overwritePolicy
@@ -123,6 +124,8 @@ func parametersToConfig(params parameters) *altenvConfig {
 	config.Defines = append(config.Defines, &defineConfig{
 		Vars: params.Defines.Value(),
 	})
+
+	config.Prompt = params.Prompt
 
 	if params.Overwrite != "" {
 		config.Overwrite = &params.Overwrite

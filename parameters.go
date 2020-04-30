@@ -4,10 +4,9 @@ import (
 	"io"
 	"os"
 
+	"github.com/Songmu/prompter"
 	cli "github.com/urfave/cli/v2"
 )
-
-type fileOpen func(string) (io.ReadCloser, error)
 
 func wrapOSOpen(name string) (io.ReadCloser, error) {
 	return os.Open(name)
@@ -17,6 +16,7 @@ type parameters struct {
 	EnvFiles  cli.StringSlice
 	JSONFiles cli.StringSlice
 	Defines   cli.StringSlice
+	Prompt    string
 
 	Profile    string
 	ConfigPath string
@@ -27,11 +27,13 @@ type parameters struct {
 	// For testing
 	DryRunOutput io.Writer
 	OpenFunc     fileOpen
+	InputFunc    promptInput
 }
 
 func newParameters() parameters {
 	return parameters{
 		DryRunOutput: os.Stdout,
 		OpenFunc:     wrapOSOpen,
+		InputFunc:    prompter.Password,
 	}
 }

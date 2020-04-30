@@ -400,3 +400,18 @@ func TestOverwriteSetInConfig(t *testing.T) {
 	envmap := toEnvVars(buf)
 	assert.Equal(t, "ORANGE", envmap["COLOR"])
 }
+
+func TestCommandPrompt(t *testing.T) {
+	buf := &bytes.Buffer{}
+	params := &Parameters{
+		DryRunOutput: buf,
+		OpenFunc:     fileNeverExists,
+		InputFunc:    func(string) string { return "BLUE" },
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("--prompt", "COLOR"))
+	require.NoError(t, err)
+	envmap := toEnvVars(buf)
+	assert.Equal(t, "BLUE", envmap["COLOR"])
+}
