@@ -21,6 +21,7 @@ type parameters struct {
 	Profile    string
 	ConfigPath string
 	LogLevel   string
+	Overwrite  string
 
 	// For testing
 	DryRun       bool

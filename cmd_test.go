@@ -282,3 +282,121 @@ func TestConfigRequiredFileNotFound(t *testing.T) {
 	err := app.Run(newArgs("-c", "testconfig"))
 	require.Error(t, err)
 }
+
+func fileNeverExists(string) (io.ReadCloser, error) {
+	return nil, os.ErrNotExist
+}
+
+func TestOverwriteDefaultDeny(t *testing.T) {
+	buf := &bytes.Buffer{}
+	params := &Parameters{
+		DryRunOutput: buf,
+		OpenFunc:     fileNeverExists,
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("-d", "COLOR=BLUE", "-d", "COLOR=ORANGE"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Deny to overwrite")
+}
+
+func TestOverwriteExplicitDeny(t *testing.T) {
+	buf := &bytes.Buffer{}
+	params := &Parameters{
+		DryRunOutput: buf,
+		OpenFunc:     fileNeverExists,
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("--overwrite", "deny", "-d", "COLOR=BLUE", "-d", "COLOR=ORANGE"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Deny to overwrite")
+}
+
+func TestOverwriteExplicitWarn(t *testing.T) {
+	buf := &bytes.Buffer{}
+	params := &Parameters{
+		DryRunOutput: buf,
+		OpenFunc:     fileNeverExists,
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("--overwrite", "warn", "-l", "error", "-d", "COLOR=BLUE", "-d", "COLOR=ORANGE"))
+	require.NoError(t, err)
+	envmap := toEnvVars(buf)
+	assert.Equal(t, "ORANGE", envmap["COLOR"])
+}
+
+func TestOverwriteExplicitAllow(t *testing.T) {
+	buf := &bytes.Buffer{}
+	params := &Parameters{
+		DryRunOutput: buf,
+		OpenFunc:     fileNeverExists,
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("--overwrite", "allow", "-d", "COLOR=BLUE", "-d", "COLOR=ORANGE"))
+	require.NoError(t, err)
+	envmap := toEnvVars(buf)
+	assert.Equal(t, "ORANGE", envmap["COLOR"])
+}
+
+func TestOverwriteInvalidPolicy(t *testing.T) {
+	buf := &bytes.Buffer{}
+	params := &Parameters{
+		DryRunOutput: buf,
+		OpenFunc:     fileNeverExists,
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("--overwrite", "xxx", "-d", "COLOR=BLUE"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "is not valid overwrite option")
+}
+
+func TestOverwriteEvnFile(t *testing.T) {
+	buf := &bytes.Buffer{}
+
+	params := &Parameters{
+		DryRunOutput: buf,
+		OpenFunc: func(fname string) (io.ReadCloser, error) {
+			switch fname {
+			case "my.env":
+				return ToReadCloser("COLOR=BLUE"), nil
+			default:
+				return nil, os.ErrNotExist
+			}
+		},
+	}
+	app := NewApp(params)
+	err := app.Run(newArgs("--overwrite", "allow", "-e", "my.env", "-d", "COLOR=ORANGE"))
+	require.NoError(t, err)
+	envmap := toEnvVars(buf)
+	assert.Equal(t, "ORANGE", envmap["COLOR"])
+}
+
+func TestOverwriteSetInConfig(t *testing.T) {
+	buf := &bytes.Buffer{}
+
+	configData := `
+[global]
+	overwrite = "allow"
+`
+	params := &Parameters{
+		DryRunOutput: buf,
+		OpenFunc: func(fname string) (io.ReadCloser, error) {
+			switch fname {
+			case "testconfig":
+				return ToReadCloser(configData), nil
+			default:
+				return nil, os.ErrNotExist
+			}
+		},
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("-c", "testconfig", "-d", "COLOR=BLUE", "-d", "COLOR=ORANGE"))
+	require.NoError(t, err)
+	envmap := toEnvVars(buf)
+	assert.Equal(t, "ORANGE", envmap["COLOR"])
+}

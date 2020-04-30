@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -26,6 +27,7 @@ func run(params parameters, args []string) error {
 		"args":   args,
 	}).Debug("Run altenv")
 
+	// Setup configuration
 	paramConfig := parametersToConfig(params)
 	masterConfig, err := loadConfigFile(params.ConfigPath, params.Profile, params.OpenFunc)
 	if err != nil {
@@ -38,6 +40,11 @@ func run(params parameters, args []string) error {
 		masterConfig = paramConfig
 	}
 
+	if err := masterConfig.finalize(); err != nil {
+		return err
+	}
+
+	// Setup environment variables
 	var envvars []*envvar
 
 	// Read environment variables
@@ -76,6 +83,34 @@ func run(params parameters, args []string) error {
 			envvars = append(envvars, v)
 		}
 	}
+
+	// Check overwrite
+	varmap := map[string]*envvar{}
+	for _, v := range envvars {
+		if existValue, ok := varmap[v.Key]; ok {
+			logFields := logrus.Fields{
+				"key": v.Key,
+				"old": existValue,
+				"new": v.Value,
+			}
+
+			switch masterConfig.overwrite {
+			case overwriteDeny:
+				return fmt.Errorf("Deny to overwrite `%s`, `%s` -> `%s`", v.Key, existValue, v.Value)
+			case overwriteWarn:
+				logger.WithFields(logFields).Warn("Overwrote environment variable")
+			case overwriteAllow:
+				logger.WithFields(logFields).Debug("Overwrote environment variable")
+			}
+		}
+		varmap[v.Key] = v
+	}
+
+	var newVars []*envvar
+	for _, v := range varmap {
+		newVars = append(newVars, v)
+	}
+	envvars = newVars
 
 	if params.DryRun {
 		// Dryrun
@@ -154,6 +189,12 @@ func newApp(params *parameters) *cli.App {
 				Usage:       "Use profile",
 				Destination: &params.Profile,
 				Value:       defaultProfileName,
+			},
+
+			&cli.StringFlag{
+				Name:        "overwrite",
+				Usage:       "Overwrite policy [allow|warn|deny] (default: deny)",
+				Destination: &params.Overwrite,
 			},
 		},
 	}

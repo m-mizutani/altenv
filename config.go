@@ -59,16 +59,51 @@ type configFile struct {
 	Profiles map[string]altenvConfig `toml:"profile"`
 }
 
+type overwritePolicy int
+
+const (
+	overwriteDeny = iota
+	overwriteWarn
+	overwriteAllow
+)
+
+var overwritePolicyMap = map[string]overwritePolicy{
+	"deny":  overwriteDeny,
+	"warn":  overwriteWarn,
+	"allow": overwriteAllow,
+}
+
 type altenvConfig struct {
 	EnvFiles  []*envFileConfig  `toml:"envfile"`
 	JSONFiles []*jsonFileConfig `toml:"jsonfile"`
 	Defines   []*defineConfig   `toml:"define"`
+	Overwrite *string           `toml:"overwrite"`
+
+	overwrite overwritePolicy
 }
 
 func (x *altenvConfig) merge(src altenvConfig) {
 	x.EnvFiles = append(x.EnvFiles, src.EnvFiles...)
 	x.JSONFiles = append(x.JSONFiles, src.JSONFiles...)
 	x.Defines = append(x.Defines, src.Defines...)
+	if src.Overwrite != nil {
+		x.Overwrite = src.Overwrite
+	}
+}
+
+func (x *altenvConfig) finalize() error {
+	if x.Overwrite == nil {
+		deny := "deny"
+		x.Overwrite = &deny
+	}
+
+	policy, ok := overwritePolicyMap[*x.Overwrite]
+	if !ok {
+		return fmt.Errorf("`%s` is not valid overwrite option, must be [deny|warn|allow]", *x.Overwrite)
+	}
+	x.overwrite = policy
+
+	return nil
 }
 
 func parametersToConfig(params parameters) *altenvConfig {
@@ -88,6 +123,10 @@ func parametersToConfig(params parameters) *altenvConfig {
 	config.Defines = append(config.Defines, &defineConfig{
 		Vars: params.Defines.Value(),
 	})
+
+	if params.Overwrite != "" {
+		config.Overwrite = &params.Overwrite
+	}
 
 	return config
 }
