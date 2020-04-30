@@ -16,13 +16,15 @@ type parameters struct {
 	EnvFiles  cli.StringSlice
 	JSONFiles cli.StringSlice
 	Defines   cli.StringSlice
+	Keychains cli.StringSlice
 	Prompt    string
 
-	Profile    string
-	ConfigPath string
-	LogLevel   string
-	Overwrite  string
-	RunMode    string
+	Profile       string
+	ConfigPath    string
+	LogLevel      string
+	Overwrite     string
+	RunMode       string
+	WriteKeyChain string
 
 	// For testing
 	DryRunOutput io.Writer

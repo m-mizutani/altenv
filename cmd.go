@@ -59,6 +59,14 @@ func run(params parameters, args []string) error {
 			return err
 		}
 
+	case "update-keychain":
+		if masterConfig.WriteKeychainNamespace == "" {
+			return fmt.Errorf("--write-keychain-namespace option is required")
+		}
+		if err := putKeyChainValues(envvars, masterConfig.WriteKeychainNamespace); err != nil {
+			return err
+		}
+
 	case "exec":
 		if err := execCommand(envvars, args); err != nil {
 			return err
@@ -106,6 +114,12 @@ func newApp(params *parameters) *cli.App {
 				Usage:       "Set environment variable by FOO=BAR format",
 				Destination: &params.Defines,
 			},
+			&cli.StringSliceFlag{
+				Name:        "keychain",
+				Aliases:     []string{"k"},
+				Usage:       "Read from Keychain of specified namespace",
+				Destination: &params.Keychains,
+			},
 			&cli.StringFlag{
 				Name:        "prompt",
 				Usage:       "Set a variable by prompt. Try --prompt FOO -r dryrun",
@@ -131,7 +145,7 @@ func newApp(params *parameters) *cli.App {
 			&cli.StringFlag{
 				Name:        "run-mode",
 				Aliases:     []string{"r"},
-				Usage:       "Run mode [exec|dryrun]",
+				Usage:       "Run mode [exec|dryrun|update-keychain]",
 				Value:       "exec",
 				Destination: &params.RunMode,
 			},
@@ -148,6 +162,13 @@ func newApp(params *parameters) *cli.App {
 				Name:        "overwrite",
 				Usage:       "Overwrite policy [allow|warn|deny] (default: deny)",
 				Destination: &params.Overwrite,
+			},
+
+			&cli.StringFlag{
+				Name:        "write-keychain-namespace",
+				Aliases:     []string{"w"},
+				Usage:       "keychain namespace to write. Required for run-mode update-keychain",
+				Destination: &params.WriteKeyChain,
 			},
 		},
 	}

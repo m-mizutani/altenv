@@ -77,6 +77,14 @@ func loadEnvVars(args loadEnvVarsArgs) ([]*envvar, error) {
 		}
 	}
 
+	for _, namespace := range args.config.Keychains {
+		vars, err := getKeyChainValues(namespace)
+		if err != nil {
+			return nil, err
+		}
+		envvars = append(envvars, vars...)
+	}
+
 	if args.config.Prompt != "" {
 		value := args.inputFunc(fmt.Sprintf("Enter %s value", args.config.Prompt))
 		envvars = append(envvars, &envvar{
