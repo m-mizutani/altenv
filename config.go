@@ -30,13 +30,23 @@ func loadConfigFile(path string, profile string, open fileOpen) (*altenvConfig, 
 }
 
 type envFileConfig struct {
-	Path     string `toml:"path"`
-	Required *bool  `toml:"required"`
+	Path string `toml:"path"`
+	// If true, fail when file not found. Default (nil) is true
+	Required *bool `toml:"required"`
+}
+
+func (x *envFileConfig) IsRequired() bool {
+	return (x.Required == nil || *x.Required == true)
 }
 
 type jsonFileConfig struct {
-	Path     string `toml:"path"`
-	Required *bool  `toml:"required"`
+	Path string `toml:"path"`
+	// If true, fail when file not found. Default (nil) is true
+	Required *bool `toml:"required"`
+}
+
+func (x *jsonFileConfig) IsRequired() bool {
+	return (x.Required == nil || *x.Required == true)
 }
 
 type defineConfig struct {
@@ -97,11 +107,10 @@ func parseConfigFile(fd io.Reader, profile string) (*altenvConfig, error) {
 
 	profileCfg, ok := fileCfg.Profiles[profile]
 	if !ok {
-		if defaultProfileName == profile {
-			logger.Debug("profile is default, but no default profile in config")
-			return nil, nil
+		if defaultProfileName != profile {
+			return nil, fmt.Errorf("profile `%s` is not found in config file", profile)
 		}
-		return nil, fmt.Errorf("profile `%s` is not found in config file", profile)
+		logger.Debug("profile is default, but no default profile in config")
 	}
 
 	config.merge(fileCfg.Global)

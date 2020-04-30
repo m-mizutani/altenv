@@ -217,3 +217,68 @@ func TestConfigProfile(t *testing.T) {
 	assert.Equal(t, "TIMELESS", envmap["WORDS"])
 	assert.NotContains(t, envmap, "MAGIC")
 }
+
+func TestConfigNotRequiredFile(t *testing.T) {
+	buf := &bytes.Buffer{}
+
+	configData := `
+[global]
+	[[global.envfile]]
+	path = "envfile_global_1.env"
+	required = false
+
+	[[global.envfile]]
+	path = "envfile_global_2.env"
+	required = true
+`
+	params := &Parameters{
+		DryRunOutput: buf,
+		OpenFunc: func(fname string) (io.ReadCloser, error) {
+			switch fname {
+			case "testconfig":
+				return ToReadCloser(configData), nil
+			case "envfile_global_2.env":
+				return ToReadCloser("COSMOS=STARS"), nil
+			default:
+				return nil, os.ErrNotExist
+			}
+		},
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("-c", "testconfig"))
+	require.NoError(t, err)
+
+	envmap := toEnvVars(buf)
+	assert.Equal(t, "STARS", envmap["COSMOS"])
+}
+
+func TestConfigRequiredFileNotFound(t *testing.T) {
+	buf := &bytes.Buffer{}
+
+	configData := `
+[global]
+	[[global.envfile]]
+	path = "envfile_global_1.env"
+	required = false
+
+	[[global.envfile]]
+	path = "envfile_global_2.env"
+	required = true
+`
+	params := &Parameters{
+		DryRunOutput: buf,
+		OpenFunc: func(fname string) (io.ReadCloser, error) {
+			switch fname {
+			case "testconfig":
+				return ToReadCloser(configData), nil
+			default:
+				return nil, os.ErrNotExist
+			}
+		},
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("-c", "testconfig"))
+	require.Error(t, err)
+}

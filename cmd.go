@@ -25,14 +25,17 @@ func run(params parameters, args []string) error {
 		"params": params,
 		"args":   args,
 	}).Debug("Run altenv")
-	config := parametersToConfig(params)
 
-	loadConfig, err := loadConfigFile(params.ConfigPath, params.Profile, params.OpenFunc)
+	paramConfig := parametersToConfig(params)
+	config, err := loadConfigFile(params.ConfigPath, params.Profile, params.OpenFunc)
 	if err != nil {
 		return err
 	}
-	if loadConfig != nil {
-		config.merge(*loadConfig)
+
+	if config != nil {
+		config.merge(*paramConfig)
+	} else {
+		config = paramConfig
 	}
 
 	var envvars []*envvar
@@ -41,16 +44,23 @@ func run(params parameters, args []string) error {
 	for _, f := range config.EnvFiles {
 		logger.WithField("path", f.Path).Debug("Read EnvFile")
 		vars, err := readEnvFile(f.Path, params.OpenFunc)
-		if err != nil {
+		if os.IsNotExist(err) && !f.IsRequired() {
+			logger.WithField("path", f.Path).Debug("EnvFile is not found, but ignore because not required")
+			continue
+		} else if err != nil {
 			return errors.Wrapf(err, "Fail to read EnvFile %s", f.Path)
 		}
+
 		envvars = append(envvars, vars...)
 	}
 
 	for _, f := range config.JSONFiles {
 		logger.WithField("path", f.Path).Debug("Read JSON file")
 		vars, err := readJSONFile(f.Path, params.OpenFunc)
-		if err != nil {
+		if os.IsNotExist(err) && !f.IsRequired() {
+			logger.WithField("path", f.Path).Debug("JSON File is not found, but ignore because not required")
+			continue
+		} else if err != nil {
 			return errors.Wrapf(err, "Fail to read JSON file %s", f.Path)
 		}
 		envvars = append(envvars, vars...)
