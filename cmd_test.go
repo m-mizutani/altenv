@@ -48,7 +48,7 @@ func makeParameters(buf *bytes.Buffer) *Parameters {
 }
 
 func newArgs(args ...string) []string {
-	base := []string{"altenv", "--dryrun"}
+	base := []string{"altenv", "-r", "dryrun"}
 	return append(base, args...)
 }
 

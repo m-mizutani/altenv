@@ -22,9 +22,9 @@ type parameters struct {
 	ConfigPath string
 	LogLevel   string
 	Overwrite  string
+	RunMode    string
 
 	// For testing
-	DryRun       bool
 	DryRunOutput io.Writer
 	OpenFunc     fileOpen
 }

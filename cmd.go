@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -48,16 +49,19 @@ func run(params parameters, args []string) error {
 		return err
 	}
 
-	if params.DryRun {
-		// Dryrun
+	switch params.RunMode {
+	case "dryrun":
 		if err := dumpEnvVars(params.DryRunOutput, envvars); err != nil {
 			return err
 		}
-	} else {
-		// Execute command
+
+	case "exec":
 		if err := execCommand(envvars, args); err != nil {
 			return err
 		}
+
+	default:
+		return fmt.Errorf("Invalid run mode: `%s`", params.RunMode)
 	}
 
 	return nil
@@ -113,10 +117,14 @@ func newApp(params *parameters) *cli.App {
 				Destination: &params.ConfigPath,
 				Value:       defaultConfigPath,
 			},
-			&cli.BoolFlag{
-				Name:        "dryrun",
-				Usage:       "Enable dryrun mode",
-				Destination: &params.DryRun,
+
+			// Running mode
+			&cli.StringFlag{
+				Name:        "run-mode",
+				Aliases:     []string{"r"},
+				Usage:       "Run mode [exec|dryrun]",
+				Value:       "exec",
+				Destination: &params.RunMode,
 			},
 
 			&cli.StringFlag{
