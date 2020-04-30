@@ -27,21 +27,21 @@ func run(params parameters, args []string) error {
 	}).Debug("Run altenv")
 
 	paramConfig := parametersToConfig(params)
-	config, err := loadConfigFile(params.ConfigPath, params.Profile, params.OpenFunc)
+	masterConfig, err := loadConfigFile(params.ConfigPath, params.Profile, params.OpenFunc)
 	if err != nil {
 		return err
 	}
 
-	if config != nil {
-		config.merge(*paramConfig)
+	if masterConfig != nil {
+		masterConfig.merge(*paramConfig)
 	} else {
-		config = paramConfig
+		masterConfig = paramConfig
 	}
 
 	var envvars []*envvar
 
 	// Read environment variables
-	for _, f := range config.EnvFiles {
+	for _, f := range masterConfig.EnvFiles {
 		logger.WithField("path", f.Path).Debug("Read EnvFile")
 		vars, err := readEnvFile(f.Path, params.OpenFunc)
 		if os.IsNotExist(err) && !f.IsRequired() {
@@ -54,7 +54,7 @@ func run(params parameters, args []string) error {
 		envvars = append(envvars, vars...)
 	}
 
-	for _, f := range config.JSONFiles {
+	for _, f := range masterConfig.JSONFiles {
 		logger.WithField("path", f.Path).Debug("Read JSON file")
 		vars, err := readJSONFile(f.Path, params.OpenFunc)
 		if os.IsNotExist(err) && !f.IsRequired() {
@@ -66,7 +66,7 @@ func run(params parameters, args []string) error {
 		envvars = append(envvars, vars...)
 	}
 
-	for _, def := range config.Defines {
+	for _, def := range masterConfig.Defines {
 		for _, vdef := range def.Vars {
 			logger.WithField("define", vdef).Debug("Set temp variables")
 			v, err := parseDefine(vdef)
