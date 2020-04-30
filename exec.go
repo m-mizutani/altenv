@@ -2,32 +2,12 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"os"
 	"os/exec"
-	"sort"
 	"syscall"
 
 	"github.com/pkg/errors"
 )
-
-type envvar struct {
-	Key   string
-	Value string
-}
-
-func dumpEnvVars(w io.Writer, vars []*envvar) error {
-	sort.Slice(vars, func(i, j int) bool {
-		return vars[i].Key < vars[j].Key
-	})
-
-	for _, v := range vars {
-		if _, err := fmt.Fprintf(w, "%s=%s\n", v.Key, v.Value); err != nil {
-			return errors.Wrap(err, "Fail to output dryrun results")
-		}
-	}
-	return nil
-}
 
 func execCommand(vars []*envvar, args []string) error {
 	if len(args) == 0 {

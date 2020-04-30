@@ -1,11 +1,9 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 
-	"github.com/pkg/errors"
 	"github.com/sirupsen/logrus"
 	cli "github.com/urfave/cli/v2"
 )
@@ -45,72 +43,10 @@ func run(params parameters, args []string) error {
 	}
 
 	// Setup environment variables
-	var envvars []*envvar
-
-	// Read environment variables
-	for _, f := range masterConfig.EnvFiles {
-		logger.WithField("path", f.Path).Debug("Read EnvFile")
-		vars, err := readEnvFile(f.Path, params.OpenFunc)
-		if os.IsNotExist(err) && !f.IsRequired() {
-			logger.WithField("path", f.Path).Debug("EnvFile is not found, but ignore because not required")
-			continue
-		} else if err != nil {
-			return errors.Wrapf(err, "Fail to read EnvFile %s", f.Path)
-		}
-
-		envvars = append(envvars, vars...)
+	envvars, err := loadEnvVars(masterConfig, params.OpenFunc)
+	if err != nil {
+		return err
 	}
-
-	for _, f := range masterConfig.JSONFiles {
-		logger.WithField("path", f.Path).Debug("Read JSON file")
-		vars, err := readJSONFile(f.Path, params.OpenFunc)
-		if os.IsNotExist(err) && !f.IsRequired() {
-			logger.WithField("path", f.Path).Debug("JSON File is not found, but ignore because not required")
-			continue
-		} else if err != nil {
-			return errors.Wrapf(err, "Fail to read JSON file %s", f.Path)
-		}
-		envvars = append(envvars, vars...)
-	}
-
-	for _, def := range masterConfig.Defines {
-		for _, vdef := range def.Vars {
-			logger.WithField("define", vdef).Debug("Set temp variables")
-			v, err := parseDefine(vdef)
-			if err != nil {
-				return err
-			}
-			envvars = append(envvars, v)
-		}
-	}
-
-	// Check overwrite
-	varmap := map[string]*envvar{}
-	for _, v := range envvars {
-		if existValue, ok := varmap[v.Key]; ok {
-			logFields := logrus.Fields{
-				"key": v.Key,
-				"old": existValue,
-				"new": v.Value,
-			}
-
-			switch masterConfig.overwrite {
-			case overwriteDeny:
-				return fmt.Errorf("Deny to overwrite `%s`, `%s` -> `%s`", v.Key, existValue, v.Value)
-			case overwriteWarn:
-				logger.WithFields(logFields).Warn("Overwrote environment variable")
-			case overwriteAllow:
-				logger.WithFields(logFields).Debug("Overwrote environment variable")
-			}
-		}
-		varmap[v.Key] = v
-	}
-
-	var newVars []*envvar
-	for _, v := range varmap {
-		newVars = append(newVars, v)
-	}
-	envvars = newVars
 
 	if params.DryRun {
 		// Dryrun
