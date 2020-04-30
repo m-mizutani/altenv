@@ -36,7 +36,7 @@ type envFileConfig struct {
 }
 
 func (x *envFileConfig) IsRequired() bool {
-	return (x.Required == nil || *x.Required == true)
+	return (x.Required == nil || *x.Required)
 }
 
 type jsonFileConfig struct {
@@ -46,7 +46,7 @@ type jsonFileConfig struct {
 }
 
 func (x *jsonFileConfig) IsRequired() bool {
-	return (x.Required == nil || *x.Required == true)
+	return (x.Required == nil || *x.Required)
 }
 
 type defineConfig struct {
