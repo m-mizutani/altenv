@@ -80,6 +80,8 @@ type altenvConfig struct {
 	Keychains []string          `toml:"keychain"`
 	Overwrite *string           `toml:"overwrite"`
 
+	KeychainServicePrefix string `toml:"keychainServicePrefix"`
+
 	// Only available by CLI option
 	Prompt                 string `toml:"-"`
 	WriteKeychainNamespace string `toml:"-"`
@@ -94,6 +96,12 @@ func (x *altenvConfig) merge(src altenvConfig) {
 	x.Keychains = append(x.Keychains, src.Keychains...)
 	if src.Overwrite != nil {
 		x.Overwrite = src.Overwrite
+	}
+	if src.KeychainServicePrefix != "" {
+		x.KeychainServicePrefix = src.KeychainServicePrefix
+	}
+	if src.WriteKeychainNamespace != "" {
+		x.WriteKeychainNamespace = src.WriteKeychainNamespace
 	}
 }
 
@@ -134,6 +142,7 @@ func parametersToConfig(params parameters) *altenvConfig {
 
 	config.Prompt = params.Prompt
 	config.WriteKeychainNamespace = params.WriteKeyChain
+	config.KeychainServicePrefix = params.KeychainServicePrefix
 
 	if params.Overwrite != "" {
 		config.Overwrite = &params.Overwrite

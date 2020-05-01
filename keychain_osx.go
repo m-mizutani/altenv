@@ -70,7 +70,7 @@ func getKeyChainValues(args getKeyChainValuesArgs) ([]*envvar, error) {
 	for _, result := range results {
 		q := keychain.NewItem()
 		q.SetSecClass(keychain.SecClassGenericPassword)
-		q.SetService(keychainServiceNamePrefix + args.namespace)
+		q.SetService(prefix + args.namespace)
 		q.SetMatchLimit(keychain.MatchLimitOne)
 		q.SetAccount(result.Account)
 		q.SetReturnData(true)

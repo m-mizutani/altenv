@@ -81,7 +81,7 @@ func loadEnvVars(args loadEnvVarsArgs) ([]*envvar, error) {
 	for _, namespace := range args.config.Keychains {
 		args := getKeyChainValuesArgs{
 			namespace:     namespace,
-			servicePrefix: "",
+			servicePrefix: args.config.KeychainServicePrefix,
 			queryItem:     args.queryItem,
 		}
 		vars, err := getKeyChainValues(args)

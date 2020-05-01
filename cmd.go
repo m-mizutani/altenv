@@ -67,7 +67,7 @@ func run(params parameters, args []string) error {
 		args := putKeyChainValuesArgs{
 			envvars:       envvars,
 			namespace:     masterConfig.WriteKeychainNamespace,
-			servicePrefix: "",
+			servicePrefix: masterConfig.KeychainServicePrefix,
 			addItem:       params.KeychainAddItem,
 			updateItem:    params.KeychainUpdateItem,
 		}
@@ -172,6 +172,11 @@ func newApp(params *parameters) *cli.App {
 				Destination: &params.Overwrite,
 			},
 
+			&cli.StringFlag{
+				Name:        "keychain-service-prefix",
+				Usage:       "Specify keychain service name prefix (default: altenv.)",
+				Destination: &params.KeychainServicePrefix,
+			},
 			&cli.StringFlag{
 				Name:        "write-keychain-namespace",
 				Aliases:     []string{"w"},

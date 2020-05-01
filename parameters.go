@@ -20,12 +20,13 @@ type parameters struct {
 	Keychains cli.StringSlice
 	Prompt    string
 
-	Profile       string
-	ConfigPath    string
-	LogLevel      string
-	Overwrite     string
-	RunMode       string
-	WriteKeyChain string
+	Profile               string
+	ConfigPath            string
+	LogLevel              string
+	Overwrite             string
+	RunMode               string
+	WriteKeyChain         string
+	KeychainServicePrefix string
 
 	// For testing
 	DryRunOutput       io.Writer
