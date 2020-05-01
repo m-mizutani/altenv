@@ -77,8 +77,14 @@ type altenvConfig struct {
 	EnvFiles  []*envFileConfig  `toml:"envfile"`
 	JSONFiles []*jsonFileConfig `toml:"jsonfile"`
 	Defines   []*defineConfig   `toml:"define"`
-	Prompt    string            `toml:"-"` // not available in toml
+	Keychains []string          `toml:"keychain"`
 	Overwrite *string           `toml:"overwrite"`
+
+	KeychainServicePrefix string `toml:"keychainServicePrefix"`
+
+	// Only available by CLI option
+	Prompt                 string `toml:"-"`
+	WriteKeychainNamespace string `toml:"-"`
 
 	overwrite overwritePolicy
 }
@@ -87,8 +93,15 @@ func (x *altenvConfig) merge(src altenvConfig) {
 	x.EnvFiles = append(x.EnvFiles, src.EnvFiles...)
 	x.JSONFiles = append(x.JSONFiles, src.JSONFiles...)
 	x.Defines = append(x.Defines, src.Defines...)
+	x.Keychains = append(x.Keychains, src.Keychains...)
 	if src.Overwrite != nil {
 		x.Overwrite = src.Overwrite
+	}
+	if src.KeychainServicePrefix != "" {
+		x.KeychainServicePrefix = src.KeychainServicePrefix
+	}
+	if src.WriteKeychainNamespace != "" {
+		x.WriteKeychainNamespace = src.WriteKeychainNamespace
 	}
 }
 
@@ -125,7 +138,11 @@ func parametersToConfig(params parameters) *altenvConfig {
 		Vars: params.Defines.Value(),
 	})
 
+	config.Keychains = append(config.Keychains, params.Keychains.Value()...)
+
 	config.Prompt = params.Prompt
+	config.WriteKeychainNamespace = params.WriteKeyChain
+	config.KeychainServicePrefix = params.KeychainServicePrefix
 
 	if params.Overwrite != "" {
 		config.Overwrite = &params.Overwrite

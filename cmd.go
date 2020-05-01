@@ -28,7 +28,7 @@ func run(params parameters, args []string) error {
 
 	// Setup configuration
 	paramConfig := parametersToConfig(params)
-	masterConfig, err := loadConfigFile(params.ConfigPath, params.Profile, params.OpenFunc)
+	masterConfig, err := loadConfigFile(params.ConfigPath, params.Profile, params.ExtIO.OpenFunc)
 	if err != nil {
 		return err
 	}
@@ -46,8 +46,9 @@ func run(params parameters, args []string) error {
 	// Setup environment variables
 	envvars, err := loadEnvVars(loadEnvVarsArgs{
 		config:    masterConfig,
-		openFunc:  params.OpenFunc,
-		inputFunc: params.InputFunc,
+		openFunc:  params.ExtIO.OpenFunc,
+		inputFunc: params.ExtIO.InputFunc,
+		queryItem: params.ExtIO.KeychainQueryItem,
 	})
 	if err != nil {
 		return err
@@ -55,7 +56,22 @@ func run(params parameters, args []string) error {
 
 	switch params.RunMode {
 	case "dryrun":
-		if err := dumpEnvVars(params.DryRunOutput, envvars); err != nil {
+		if err := dumpEnvVars(params.ExtIO.DryRunOutput, envvars); err != nil {
+			return err
+		}
+
+	case "update-keychain":
+		if masterConfig.WriteKeychainNamespace == "" {
+			return fmt.Errorf("--write-keychain-namespace option is required")
+		}
+		args := putKeyChainValuesArgs{
+			envvars:       envvars,
+			namespace:     masterConfig.WriteKeychainNamespace,
+			servicePrefix: masterConfig.KeychainServicePrefix,
+			addItem:       params.ExtIO.KeychainAddItem,
+			updateItem:    params.ExtIO.KeychainUpdateItem,
+		}
+		if err := putKeyChainValues(args); err != nil {
 			return err
 		}
 
@@ -106,6 +122,12 @@ func newApp(params *parameters) *cli.App {
 				Usage:       "Set environment variable by FOO=BAR format",
 				Destination: &params.Defines,
 			},
+			&cli.StringSliceFlag{
+				Name:        "keychain",
+				Aliases:     []string{"k"},
+				Usage:       "Read from Keychain of specified namespace",
+				Destination: &params.Keychains,
+			},
 			&cli.StringFlag{
 				Name:        "prompt",
 				Usage:       "Set a variable by prompt. Try --prompt FOO -r dryrun",
@@ -131,7 +153,7 @@ func newApp(params *parameters) *cli.App {
 			&cli.StringFlag{
 				Name:        "run-mode",
 				Aliases:     []string{"r"},
-				Usage:       "Run mode [exec|dryrun]",
+				Usage:       "Run mode [exec|dryrun|update-keychain]",
 				Value:       "exec",
 				Destination: &params.RunMode,
 			},
@@ -148,6 +170,18 @@ func newApp(params *parameters) *cli.App {
 				Name:        "overwrite",
 				Usage:       "Overwrite policy [allow|warn|deny] (default: deny)",
 				Destination: &params.Overwrite,
+			},
+
+			&cli.StringFlag{
+				Name:        "keychain-service-prefix",
+				Usage:       "Specify keychain service name prefix (default: altenv.)",
+				Destination: &params.KeychainServicePrefix,
+			},
+			&cli.StringFlag{
+				Name:        "write-keychain-namespace",
+				Aliases:     []string{"w"},
+				Usage:       "keychain namespace to write. Required for run-mode update-keychain",
+				Destination: &params.WriteKeyChain,
 			},
 		},
 	}

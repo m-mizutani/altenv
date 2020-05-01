@@ -27,20 +27,22 @@ func toEnvVars(buf *bytes.Buffer) map[string]string { // nolint
 
 func makeParameters(buf *bytes.Buffer) *Parameters {
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc: func(fname string) (io.ReadCloser, error) {
-			switch fname {
-			case "my.env":
-				return ToReadCloser("COLOR=BLUE"), nil
-			case "my2.env":
-				return ToReadCloser("COSMOS=STARS"), nil
-			case "my.json":
-				return ToReadCloser(`{"MAGIC":"5"}`), nil
-			case "my2.json":
-				return ToReadCloser(`{"COLOR":"orange"}`), nil
-			default:
-				return nil, os.ErrNotExist
-			}
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc: func(fname string) (io.ReadCloser, error) {
+				switch fname {
+				case "my.env":
+					return ToReadCloser("COLOR=BLUE"), nil
+				case "my2.env":
+					return ToReadCloser("COSMOS=STARS"), nil
+				case "my.json":
+					return ToReadCloser(`{"MAGIC":"5"}`), nil
+				case "my2.json":
+					return ToReadCloser(`{"COLOR":"orange"}`), nil
+				default:
+					return nil, os.ErrNotExist
+				}
+			},
 		},
 	}
 
@@ -168,22 +170,24 @@ func newConfigTestApp(buf *bytes.Buffer) *cli.App {
 `
 
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc: func(fname string) (io.ReadCloser, error) {
-			switch fname {
-			case "testconfig":
-				return ToReadCloser(configData), nil
-			case "envfile_global_1.env":
-				return ToReadCloser("COLOR=BLUE"), nil
-			case "envfile_global_2.env":
-				return ToReadCloser("COSMOS=STARS"), nil
-			case "envfile_default_profile.env":
-				return ToReadCloser("MAGIC=5"), nil
-			case "envfile_temp_profile.env":
-				return ToReadCloser("WORDS=TIMELESS"), nil
-			default:
-				return nil, os.ErrNotExist
-			}
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc: func(fname string) (io.ReadCloser, error) {
+				switch fname {
+				case "testconfig":
+					return ToReadCloser(configData), nil
+				case "envfile_global_1.env":
+					return ToReadCloser("COLOR=BLUE"), nil
+				case "envfile_global_2.env":
+					return ToReadCloser("COSMOS=STARS"), nil
+				case "envfile_default_profile.env":
+					return ToReadCloser("MAGIC=5"), nil
+				case "envfile_temp_profile.env":
+					return ToReadCloser("WORDS=TIMELESS"), nil
+				default:
+					return nil, os.ErrNotExist
+				}
+			},
 		},
 	}
 	app := NewApp(params)
@@ -232,16 +236,18 @@ func TestConfigNotRequiredFile(t *testing.T) {
 	required = true
 `
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc: func(fname string) (io.ReadCloser, error) {
-			switch fname {
-			case "testconfig":
-				return ToReadCloser(configData), nil
-			case "envfile_global_2.env":
-				return ToReadCloser("COSMOS=STARS"), nil
-			default:
-				return nil, os.ErrNotExist
-			}
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc: func(fname string) (io.ReadCloser, error) {
+				switch fname {
+				case "testconfig":
+					return ToReadCloser(configData), nil
+				case "envfile_global_2.env":
+					return ToReadCloser("COSMOS=STARS"), nil
+				default:
+					return nil, os.ErrNotExist
+				}
+			},
 		},
 	}
 	app := NewApp(params)
@@ -267,14 +273,16 @@ func TestConfigRequiredFileNotFound(t *testing.T) {
 	required = true
 `
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc: func(fname string) (io.ReadCloser, error) {
-			switch fname {
-			case "testconfig":
-				return ToReadCloser(configData), nil
-			default:
-				return nil, os.ErrNotExist
-			}
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc: func(fname string) (io.ReadCloser, error) {
+				switch fname {
+				case "testconfig":
+					return ToReadCloser(configData), nil
+				default:
+					return nil, os.ErrNotExist
+				}
+			},
 		},
 	}
 	app := NewApp(params)
@@ -290,8 +298,10 @@ func fileNeverExists(string) (io.ReadCloser, error) {
 func TestOverwriteDefaultDeny(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc:     fileNeverExists,
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc:     fileNeverExists,
+		},
 	}
 	app := NewApp(params)
 
@@ -303,8 +313,10 @@ func TestOverwriteDefaultDeny(t *testing.T) {
 func TestOverwriteExplicitDeny(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc:     fileNeverExists,
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc:     fileNeverExists,
+		},
 	}
 	app := NewApp(params)
 
@@ -316,8 +328,10 @@ func TestOverwriteExplicitDeny(t *testing.T) {
 func TestOverwriteExplicitWarn(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc:     fileNeverExists,
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc:     fileNeverExists,
+		},
 	}
 	app := NewApp(params)
 
@@ -330,8 +344,10 @@ func TestOverwriteExplicitWarn(t *testing.T) {
 func TestOverwriteExplicitAllow(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc:     fileNeverExists,
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc:     fileNeverExists,
+		},
 	}
 	app := NewApp(params)
 
@@ -344,8 +360,10 @@ func TestOverwriteExplicitAllow(t *testing.T) {
 func TestOverwriteInvalidPolicy(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc:     fileNeverExists,
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc:     fileNeverExists,
+		},
 	}
 	app := NewApp(params)
 
@@ -358,14 +376,16 @@ func TestOverwriteEvnFile(t *testing.T) {
 	buf := &bytes.Buffer{}
 
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc: func(fname string) (io.ReadCloser, error) {
-			switch fname {
-			case "my.env":
-				return ToReadCloser("COLOR=BLUE"), nil
-			default:
-				return nil, os.ErrNotExist
-			}
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc: func(fname string) (io.ReadCloser, error) {
+				switch fname {
+				case "my.env":
+					return ToReadCloser("COLOR=BLUE"), nil
+				default:
+					return nil, os.ErrNotExist
+				}
+			},
 		},
 	}
 	app := NewApp(params)
@@ -383,14 +403,16 @@ func TestOverwriteSetInConfig(t *testing.T) {
 	overwrite = "allow"
 `
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc: func(fname string) (io.ReadCloser, error) {
-			switch fname {
-			case "testconfig":
-				return ToReadCloser(configData), nil
-			default:
-				return nil, os.ErrNotExist
-			}
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc: func(fname string) (io.ReadCloser, error) {
+				switch fname {
+				case "testconfig":
+					return ToReadCloser(configData), nil
+				default:
+					return nil, os.ErrNotExist
+				}
+			},
 		},
 	}
 	app := NewApp(params)
@@ -404,9 +426,11 @@ func TestOverwriteSetInConfig(t *testing.T) {
 func TestCommandPrompt(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
-		DryRunOutput: buf,
-		OpenFunc:     fileNeverExists,
-		InputFunc:    func(string) string { return "BLUE" },
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc:     fileNeverExists,
+			InputFunc:    func(string) string { return "BLUE" },
+		},
 	}
 	app := NewApp(params)
 
