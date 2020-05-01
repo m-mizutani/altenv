@@ -17,7 +17,7 @@ func putKeyChainValues(envvars []*envvar, namespace string) error {
 		item.SetSecClass(keychain.SecClassGenericPassword)
 		item.SetService(keychainServiceNamePrefix + namespace)
 		item.SetAccount(v.Key)
-		// item.SetAccessGroup(keychainLabel)
+		item.SetDescription("altenv")
 		item.SetData([]byte(v.Value))
 		item.SetAccessible(keychain.AccessibleWhenUnlocked)
 		item.SetSynchronizable(keychain.SynchronizableNo)
