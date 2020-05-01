@@ -28,7 +28,7 @@ func run(params parameters, args []string) error {
 
 	// Setup configuration
 	paramConfig := parametersToConfig(params)
-	masterConfig, err := loadConfigFile(params.ConfigPath, params.Profile, params.OpenFunc)
+	masterConfig, err := loadConfigFile(params.ConfigPath, params.Profile, params.ExtIO.OpenFunc)
 	if err != nil {
 		return err
 	}
@@ -46,9 +46,9 @@ func run(params parameters, args []string) error {
 	// Setup environment variables
 	envvars, err := loadEnvVars(loadEnvVarsArgs{
 		config:    masterConfig,
-		openFunc:  params.OpenFunc,
-		inputFunc: params.InputFunc,
-		queryItem: params.KeychainQueryItem,
+		openFunc:  params.ExtIO.OpenFunc,
+		inputFunc: params.ExtIO.InputFunc,
+		queryItem: params.ExtIO.KeychainQueryItem,
 	})
 	if err != nil {
 		return err
@@ -56,7 +56,7 @@ func run(params parameters, args []string) error {
 
 	switch params.RunMode {
 	case "dryrun":
-		if err := dumpEnvVars(params.DryRunOutput, envvars); err != nil {
+		if err := dumpEnvVars(params.ExtIO.DryRunOutput, envvars); err != nil {
 			return err
 		}
 
@@ -68,8 +68,8 @@ func run(params parameters, args []string) error {
 			envvars:       envvars,
 			namespace:     masterConfig.WriteKeychainNamespace,
 			servicePrefix: masterConfig.KeychainServicePrefix,
-			addItem:       params.KeychainAddItem,
-			updateItem:    params.KeychainUpdateItem,
+			addItem:       params.ExtIO.KeychainAddItem,
+			updateItem:    params.ExtIO.KeychainUpdateItem,
 		}
 		if err := putKeyChainValues(args); err != nil {
 			return err

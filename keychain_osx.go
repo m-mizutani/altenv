@@ -9,6 +9,16 @@ import (
 	"github.com/pkg/errors"
 )
 
+type keychainAddItem func(keychain.Item) error
+type keychainUpdateItem func(keychain.Item, keychain.Item) error
+type keychainQueryItem func(keychain.Item) ([]keychain.QueryResult, error)
+
+func setupKeychainFunc(extIO *ExtIOFunc) {
+	extIO.KeychainAddItem = keychain.AddItem
+	extIO.KeychainUpdateItem = keychain.UpdateItem
+	extIO.KeychainQueryItem = keychain.QueryItem
+}
+
 func putKeyChainValues(args putKeyChainValuesArgs) error {
 	prefix := keychainServiceNamePrefix
 	if args.servicePrefix != "" {
