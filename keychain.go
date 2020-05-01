@@ -1,7 +1,5 @@
 package main
 
-const keychainServiceNamePrefix = "altenv."
-
 type putKeyChainValuesArgs struct {
 	envvars       []*envvar
 	namespace     string

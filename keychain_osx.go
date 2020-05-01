@@ -9,6 +9,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+const keychainServiceNamePrefix = "altenv."
+
 type keychainAddItem func(keychain.Item) error
 type keychainUpdateItem func(keychain.Item, keychain.Item) error
 type keychainQueryItem func(keychain.Item) ([]keychain.QueryResult, error)
