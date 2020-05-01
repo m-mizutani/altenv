@@ -9,33 +9,36 @@ import (
 	"github.com/pkg/errors"
 )
 
-const keychainServiceNamePrefix = "altenv."
+func putKeyChainValues(args putKeyChainValuesArgs) error {
+	prefix := keychainServiceNamePrefix
+	if args.servicePrefix != "" {
+		prefix = args.servicePrefix
+	}
 
-func putKeyChainValues(envvars []*envvar, namespace string) error {
-	for _, v := range envvars {
+	for _, v := range args.envvars {
 		item := keychain.NewItem()
 		item.SetSecClass(keychain.SecClassGenericPassword)
-		item.SetService(keychainServiceNamePrefix + namespace)
+		item.SetService(prefix + args.namespace)
 		item.SetAccount(v.Key)
 		item.SetDescription("altenv")
 		item.SetData([]byte(v.Value))
 		item.SetAccessible(keychain.AccessibleWhenUnlocked)
 		item.SetSynchronizable(keychain.SynchronizableNo)
 
-		err := keychain.AddItem(item)
+		err := args.addItem(item)
 		if err == keychain.ErrorDuplicateItem {
 			// Duplicate
 			query := keychain.NewItem()
 			query.SetSecClass(keychain.SecClassGenericPassword)
-			query.SetService(keychainServiceNamePrefix + namespace)
+			query.SetService(keychainServiceNamePrefix + args.namespace)
 			query.SetAccount(v.Key)
 			// query.SetAccessGroup(keychainLabel)
 			query.SetMatchLimit(keychain.MatchLimitAll)
 
-			if err := keychain.UpdateItem(query, item); err != nil {
+			if err := args.updateItem(query, item); err != nil {
 				return errors.Wrap(err, "Fail to update an existing item")
 			}
-		} else {
+		} else if err != nil {
 			return errors.Wrap(err, "Fail to add a new keychain item")
 		}
 	}
@@ -43,31 +46,36 @@ func putKeyChainValues(envvars []*envvar, namespace string) error {
 	return nil
 }
 
-func getKeyChainValues(namespace string) ([]*envvar, error) {
+func getKeyChainValues(args getKeyChainValuesArgs) ([]*envvar, error) {
+	prefix := keychainServiceNamePrefix
+	if args.servicePrefix != "" {
+		prefix = args.servicePrefix
+	}
+
 	query := keychain.NewItem()
 	query.SetSecClass(keychain.SecClassGenericPassword)
-	query.SetService(keychainServiceNamePrefix + namespace)
+	query.SetService(prefix + args.namespace)
 	query.SetMatchLimit(keychain.MatchLimitAll)
 	query.SetReturnAttributes(true)
 
-	results, err := keychain.QueryItem(query)
+	results, err := args.queryItem(query)
 	if err != nil {
 		return nil, errors.Wrap(err, "Fail to get keychain values")
 	}
 	if len(results) == 0 {
-		return nil, fmt.Errorf("Keychain items not found in %s", namespace)
+		return nil, fmt.Errorf("Keychain items not found in %s", args.namespace)
 	}
 
 	var envvars []*envvar
 	for _, result := range results {
 		q := keychain.NewItem()
 		q.SetSecClass(keychain.SecClassGenericPassword)
-		q.SetService(keychainServiceNamePrefix + namespace)
+		q.SetService(keychainServiceNamePrefix + args.namespace)
 		q.SetMatchLimit(keychain.MatchLimitOne)
 		q.SetAccount(result.Account)
 		q.SetReturnData(true)
 
-		data, err := keychain.QueryItem(q)
+		data, err := args.queryItem(q)
 		if err != nil {
 			return nil, fmt.Errorf("Fail to get keychain value: `%s`", result.Account)
 		}

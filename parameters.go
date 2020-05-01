@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/Songmu/prompter"
+	"github.com/keybase/go-keychain"
 	cli "github.com/urfave/cli/v2"
 )
 
@@ -27,15 +28,21 @@ type parameters struct {
 	WriteKeyChain string
 
 	// For testing
-	DryRunOutput io.Writer
-	OpenFunc     fileOpen
-	InputFunc    promptInput
+	DryRunOutput       io.Writer
+	OpenFunc           fileOpen
+	InputFunc          promptInput
+	KeychainAddItem    keychainAddItem
+	KeychainUpdateItem keychainUpdateItem
+	KeychainQueryItem  keychainQueryItem
 }
 
 func newParameters() parameters {
 	return parameters{
-		DryRunOutput: os.Stdout,
-		OpenFunc:     wrapOSOpen,
-		InputFunc:    prompter.Password,
+		DryRunOutput:       os.Stdout,
+		OpenFunc:           wrapOSOpen,
+		InputFunc:          prompter.Password,
+		KeychainAddItem:    keychain.AddItem,
+		KeychainUpdateItem: keychain.UpdateItem,
+		KeychainQueryItem:  keychain.QueryItem,
 	}
 }

@@ -35,6 +35,7 @@ type loadEnvVarsArgs struct {
 	config    *altenvConfig
 	openFunc  fileOpen
 	inputFunc promptInput
+	queryItem keychainQueryItem
 }
 
 func loadEnvVars(args loadEnvVarsArgs) ([]*envvar, error) {
@@ -78,7 +79,12 @@ func loadEnvVars(args loadEnvVarsArgs) ([]*envvar, error) {
 	}
 
 	for _, namespace := range args.config.Keychains {
-		vars, err := getKeyChainValues(namespace)
+		args := getKeyChainValuesArgs{
+			namespace:     namespace,
+			servicePrefix: "",
+			queryItem:     args.queryItem,
+		}
+		vars, err := getKeyChainValues(args)
 		if err != nil {
 			return nil, err
 		}

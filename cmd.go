@@ -48,6 +48,7 @@ func run(params parameters, args []string) error {
 		config:    masterConfig,
 		openFunc:  params.OpenFunc,
 		inputFunc: params.InputFunc,
+		queryItem: params.KeychainQueryItem,
 	})
 	if err != nil {
 		return err
@@ -63,7 +64,14 @@ func run(params parameters, args []string) error {
 		if masterConfig.WriteKeychainNamespace == "" {
 			return fmt.Errorf("--write-keychain-namespace option is required")
 		}
-		if err := putKeyChainValues(envvars, masterConfig.WriteKeychainNamespace); err != nil {
+		args := putKeyChainValuesArgs{
+			envvars:       envvars,
+			namespace:     masterConfig.WriteKeychainNamespace,
+			servicePrefix: "",
+			addItem:       params.KeychainAddItem,
+			updateItem:    params.KeychainUpdateItem,
+		}
+		if err := putKeyChainValues(args); err != nil {
 			return err
 		}
 
