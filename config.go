@@ -5,14 +5,15 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
 
 	toml "github.com/pelletier/go-toml"
 	"github.com/pkg/errors"
 )
 
 // loadConfigFile reads config from path and update params. It's destructive function.
-func loadConfigFile(path string, profile string, open fileOpen) (*altenvConfig, error) {
-	fd, err := open(path)
+func loadConfigFile(path string, profile string, ext ExtIOFunc) (*altenvConfig, error) {
+	fd, err := ext.OpenFunc(path)
 	if os.IsNotExist(err) {
 		// Ignore if path is default
 		if path != defaultConfigPath {
@@ -26,7 +27,12 @@ func loadConfigFile(path string, profile string, open fileOpen) (*altenvConfig, 
 	}
 	defer fd.Close()
 
-	return parseConfigFile(fd, profile)
+	cwd, err := ext.Getwd()
+	if err != nil {
+		return nil, errors.Wrap(err, "Fail to get CWD")
+	}
+
+	return parseConfigFile(fd, profile, cwd)
 }
 
 type envFileConfig struct {
@@ -57,6 +63,7 @@ type defineConfig struct {
 type configFile struct {
 	Global   altenvConfig            `toml:"global"`
 	Profiles map[string]altenvConfig `toml:"profile"`
+	Workdirs map[string]altenvConfig `toml:"workdir"`
 }
 
 type overwritePolicy int
@@ -81,6 +88,10 @@ type altenvConfig struct {
 	Overwrite *string           `toml:"overwrite"`
 
 	KeychainServicePrefix string `toml:"keychainServicePrefix"`
+
+	// Config identifiers
+	// DirPath is read in all section, but available only in WorkDir
+	DirPath string `toml:"dirpath"`
 
 	// Only available by CLI option
 	Prompt                 string `toml:"-"`
@@ -156,7 +167,7 @@ func parametersToConfig(params parameters) *altenvConfig {
 	return config
 }
 
-func parseConfigFile(fd io.Reader, profile string) (*altenvConfig, error) {
+func parseConfigFile(fd io.Reader, profile, cwd string) (*altenvConfig, error) {
 	var fileCfg configFile
 	var config altenvConfig
 
@@ -177,7 +188,20 @@ func parseConfigFile(fd io.Reader, profile string) (*altenvConfig, error) {
 		logger.Debug("profile is default, but no default profile in config")
 	}
 
+	var dirCfgs []altenvConfig
+	for k, dir := range fileCfg.Workdirs {
+		if dir.DirPath == "" {
+			return nil, fmt.Errorf("workdir config `%s` has no `dirpath` field", k)
+		}
+		if strings.HasPrefix(cwd, dir.DirPath) {
+			dirCfgs = append(dirCfgs, dir)
+		}
+	}
+
 	config.merge(fileCfg.Global)
+	for _, dirCfg := range dirCfgs {
+		config.merge(dirCfg)
+	}
 	config.merge(profileCfg)
 
 	return &config, nil

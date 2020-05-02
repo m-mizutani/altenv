@@ -28,9 +28,6 @@ func dumpEnvVars(w io.Writer, vars []*envvar) error {
 	return nil
 }
 
-type fileOpen func(string) (io.ReadCloser, error) // based on os.Open
-type promptInput func(string) string              // based on prompter.Password
-
 type loadResult struct {
 	EnvVars []*envvar
 	Error   error

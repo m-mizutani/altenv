@@ -7,12 +7,17 @@ import (
 	"github.com/Songmu/prompter"
 )
 
+type fileOpen func(string) (io.ReadCloser, error) // based on os.Open
+type promptInput func(string) string              // based on prompter.Password
+type getWD func() (string, error)                 // based on os.Getwd
+
 // ExtIOFunc is external IO function set.
 type ExtIOFunc struct {
 	DryRunOutput       io.Writer
 	Stdin              io.Reader
 	OpenFunc           fileOpen
 	InputFunc          promptInput
+	Getwd              getWD
 	KeychainAddItem    keychainAddItem
 	KeychainUpdateItem keychainUpdateItem
 	KeychainQueryItem  keychainQueryItem
@@ -25,6 +30,7 @@ func NewExtIOFunc() *ExtIOFunc {
 		Stdin:        os.Stdin,
 		OpenFunc:     wrapOSOpen,
 		InputFunc:    prompter.Password,
+		Getwd:        os.Getwd,
 	}
 	setupKeychainFunc(extIO)
 	return extIO

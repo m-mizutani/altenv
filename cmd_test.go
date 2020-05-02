@@ -505,3 +505,55 @@ func TestCommandStdinInvalidOption(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "Invalid input format")
 }
+
+func TestConfigDir(t *testing.T) {
+	configData := `
+[workdir.proj1]
+dirpath = "/path/to/proj1"
+[[workdir.proj1.define]]
+vars = ["COLOR=BLUE"]
+
+[workdir.proj1src]
+dirpath = "/path/to/proj1/src/"
+[[workdir.proj1src.define]]
+vars = ["MAGIC=FIFTH"]
+
+[workdir.proj1srcxxx]
+dirpath = "/path/to/proj1/src/xxx"
+workdir.proj1srcxxx.define = [
+	{vars = ["NOT=SANE"]}
+]
+
+[workdir.proj2]
+dirpath = "/path/to/proj2"
+[[workdir.proj2.define]]
+vars = ["WORDS=TIMELESS"]
+`
+	buf := &bytes.Buffer{}
+	cwd := "/path/to/proj1/src/"
+	params := &Parameters{
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc: func(fname string) (io.ReadCloser, error) {
+				switch fname {
+				case "testconfig":
+					return ToReadCloser(configData), nil
+				default:
+					return nil, os.ErrNotExist
+				}
+			},
+			Getwd: func() (string, error) {
+				return cwd, nil
+			},
+		},
+	}
+
+	app := NewApp(params)
+	err := app.Run(newArgs("-c", "testconfig"))
+	require.NoError(t, err)
+	envmap := toEnvVars(buf)
+	assert.Equal(t, "BLUE", envmap["COLOR"])
+	assert.Equal(t, "FIFTH", envmap["MAGIC"])
+	assert.NotContains(t, envmap, "WORDS")
+	assert.NotContains(t, envmap, "NOT")
+}

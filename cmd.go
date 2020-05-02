@@ -28,7 +28,7 @@ func run(params parameters, args []string) error {
 
 	// Setup configuration
 	paramConfig := parametersToConfig(params)
-	masterConfig, err := loadConfigFile(params.ConfigPath, params.Profile, params.ExtIO.OpenFunc)
+	masterConfig, err := loadConfigFile(params.ConfigPath, params.Profile, *params.ExtIO)
 	if err != nil {
 		return err
 	}
