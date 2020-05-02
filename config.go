@@ -35,31 +35,6 @@ func loadConfigFile(path string, profile string, ext ExtIOFunc) (*altenvConfig, 
 	return parseConfigFile(fd, profile, cwd)
 }
 
-type envFileConfig struct {
-	Path string `toml:"path"`
-	// If true, fail when file not found. Default (nil) is true
-	Required *bool `toml:"required"`
-}
-
-func (x *envFileConfig) IsRequired() bool {
-	return (x.Required == nil || *x.Required)
-}
-
-type jsonFileConfig struct {
-	Path string `toml:"path"`
-	// If true, fail when file not found. Default (nil) is true
-	Required *bool `toml:"required"`
-}
-
-func (x *jsonFileConfig) IsRequired() bool {
-	return (x.Required == nil || *x.Required)
-}
-
-type defineConfig struct {
-	// Expected FOO=BAR format
-	Vars []string `toml:"vars"`
-}
-
 type configFile struct {
 	Global   altenvConfig            `toml:"global"`
 	Profiles map[string]altenvConfig `toml:"profile"`
@@ -81,11 +56,11 @@ var overwritePolicyMap = map[string]overwritePolicy{
 }
 
 type altenvConfig struct {
-	EnvFiles  []*envFileConfig  `toml:"envfile"`
-	JSONFiles []*jsonFileConfig `toml:"jsonfile"`
-	Defines   []*defineConfig   `toml:"define"`
-	Keychains []string          `toml:"keychain"`
-	Overwrite *string           `toml:"overwrite"`
+	EnvFiles  []string `toml:"envfile"`
+	JSONFiles []string `toml:"jsonfile"`
+	Defines   []string `toml:"define"`
+	Keychains []string `toml:"keychain"`
+	Overwrite *string  `toml:"overwrite"`
 
 	KeychainServicePrefix string `toml:"keychainServicePrefix"`
 
@@ -137,21 +112,10 @@ func (x *altenvConfig) finalize() error {
 
 func parametersToConfig(params parameters) *altenvConfig {
 	config := &altenvConfig{}
-	for _, fpath := range params.EnvFiles.Value() {
-		config.EnvFiles = append(config.EnvFiles, &envFileConfig{
-			Path: fpath,
-		})
-	}
 
-	for _, fpath := range params.JSONFiles.Value() {
-		config.JSONFiles = append(config.JSONFiles, &jsonFileConfig{
-			Path: fpath,
-		})
-	}
-
-	config.Defines = append(config.Defines, &defineConfig{
-		Vars: params.Defines.Value(),
-	})
+	config.EnvFiles = append(config.EnvFiles, params.EnvFiles.Value()...)
+	config.JSONFiles = append(config.JSONFiles, params.JSONFiles.Value()...)
+	config.Defines = append(config.Defines, params.Defines.Value()...)
 
 	config.Keychains = append(config.Keychains, params.Keychains.Value()...)
 

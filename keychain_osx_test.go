@@ -34,6 +34,7 @@ func TestKeyChainPut(t *testing.T) {
 	callAdd, callUpdate, callQuery := false, false, false
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 			KeychainAddItem: func(item keychain.Item) error {
@@ -86,6 +87,7 @@ func TestKeyChainGet(t *testing.T) {
 	callAdd, callUpdate, callQueryAll, callQueryOne := 0, 0, 0, 0
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 			KeychainAddItem: func(item keychain.Item) error {
@@ -144,6 +146,7 @@ keychain=["ns1"]
 
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc: func(fname string) (io.ReadCloser, error) {
 				switch fname {
@@ -205,6 +208,7 @@ func TestKeyChainServicePrefix(t *testing.T) {
 	newParam := func() *Parameters {
 		return &Parameters{
 			ExtIO: &ExtIOFunc{
+				Getwd:        dummyGetwd,
 				DryRunOutput: buf,
 				OpenFunc:     fileNeverExists,
 				KeychainAddItem: func(item keychain.Item) error {
@@ -260,6 +264,7 @@ keychainServicePrefix="clocktower-"
 `
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc: func(fname string) (io.ReadCloser, error) {
 				switch fname {

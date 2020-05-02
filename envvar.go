@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"io"
-	"os"
 	"sort"
 
 	"github.com/pkg/errors"
@@ -83,17 +82,14 @@ func loadEnvVars(config altenvConfig, ext ExtIOFunc) ([]*envvar, error) {
 	return newVars, nil
 }
 
-func loadEnvFiles(envFiles []*envFileConfig, ext ExtIOFunc) loadResult {
+func loadEnvFiles(envFiles []string, ext ExtIOFunc) loadResult {
 	var envvars []*envvar
 
-	for _, f := range envFiles {
-		logger.WithField("path", f.Path).Debug("Read EnvFile")
-		vars, err := readEnvFile(f.Path, ext.OpenFunc)
-		if os.IsNotExist(err) && !f.IsRequired() {
-			logger.WithField("path", f.Path).Debug("EnvFile is not found, but ignore because not required")
-			continue
-		} else if err != nil {
-			return loadResult{nil, errors.Wrapf(err, "Fail to read EnvFile %s", f.Path)}
+	for _, path := range envFiles {
+		logger.WithField("path", path).Debug("Read EnvFile")
+		vars, err := readEnvFile(path, ext.OpenFunc)
+		if err != nil {
+			return loadResult{nil, errors.Wrapf(err, "Fail to read EnvFile %s", path)}
 		}
 
 		envvars = append(envvars, vars...)
@@ -102,17 +98,14 @@ func loadEnvFiles(envFiles []*envFileConfig, ext ExtIOFunc) loadResult {
 	return loadResult{envvars, nil}
 }
 
-func loadJSONFiles(jsonFiles []*jsonFileConfig, ext ExtIOFunc) loadResult {
+func loadJSONFiles(jsonFiles []string, ext ExtIOFunc) loadResult {
 	var envvars []*envvar
 
-	for _, f := range jsonFiles {
-		logger.WithField("path", f.Path).Debug("Read JSON file")
-		vars, err := readJSONFile(f.Path, ext.OpenFunc)
-		if os.IsNotExist(err) && !f.IsRequired() {
-			logger.WithField("path", f.Path).Debug("JSON File is not found, but ignore because not required")
-			continue
-		} else if err != nil {
-			return loadResult{nil, errors.Wrapf(err, "Fail to read JSON file %s", f.Path)}
+	for _, path := range jsonFiles {
+		logger.WithField("path", path).Debug("Read JSON file")
+		vars, err := readJSONFile(path, ext.OpenFunc)
+		if err != nil {
+			return loadResult{nil, errors.Wrapf(err, "Fail to read JSON file %s", path)}
 		}
 		envvars = append(envvars, vars...)
 	}
@@ -120,18 +113,16 @@ func loadJSONFiles(jsonFiles []*jsonFileConfig, ext ExtIOFunc) loadResult {
 	return loadResult{envvars, nil}
 }
 
-func loadDefines(defines []*defineConfig) loadResult {
+func loadDefines(defines []string) loadResult {
 	var envvars []*envvar
 
 	for _, def := range defines {
-		for _, vdef := range def.Vars {
-			logger.WithField("define", vdef).Debug("Set temp variables")
-			v, err := parseDefine(vdef)
-			if err != nil {
-				return loadResult{nil, err}
-			}
-			envvars = append(envvars, v)
+		logger.WithField("define", def).Debug("Set temp variables")
+		v, err := parseDefine(def)
+		if err != nil {
+			return loadResult{nil, err}
 		}
+		envvars = append(envvars, v)
 	}
 
 	return loadResult{envvars, nil}

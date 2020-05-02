@@ -28,6 +28,7 @@ func toEnvVars(buf *bytes.Buffer) map[string]string { // nolint
 func makeParameters(buf *bytes.Buffer) *Parameters {
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc: func(fname string) (io.ReadCloser, error) {
 				switch fname {
@@ -52,6 +53,14 @@ func makeParameters(buf *bytes.Buffer) *Parameters {
 func newArgs(args ...string) []string {
 	base := []string{"altenv", "-r", "dryrun"}
 	return append(base, args...)
+}
+
+func fileNeverExists(string) (io.ReadCloser, error) {
+	return nil, os.ErrNotExist
+}
+
+func dummyGetwd() (string, error) {
+	return "/some/where", nil
 }
 
 func TestCommandEnvFile(t *testing.T) {
@@ -153,24 +162,23 @@ func TestCommandDefine(t *testing.T) {
 func newConfigTestApp(buf *bytes.Buffer) *cli.App {
 	configData := `
 [global]
-	[[global.envfile]]
-	path = "envfile_global_1.env"
 
-	[[global.envfile]]
-	path = "envfile_global_2.env"
+envfile = [
+	"envfile_global_1.env",
+	"envfile_global_2.env",
+]
 
 [profile]
 	[profile.default]
-		[[profile.default.envfile]]
-		path = "envfile_default_profile.env"
+	envfile = ["envfile_default_profile.env"]
 
 	[profile.temp]
-		[[profile.temp.envfile]]
-		path = "envfile_temp_profile.env"
+	envfile = ["envfile_temp_profile.env"]
 `
 
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc: func(fname string) (io.ReadCloser, error) {
 				switch fname {
@@ -222,83 +230,11 @@ func TestConfigProfile(t *testing.T) {
 	assert.NotContains(t, envmap, "MAGIC")
 }
 
-func TestConfigNotRequiredFile(t *testing.T) {
-	buf := &bytes.Buffer{}
-
-	configData := `
-[global]
-	[[global.envfile]]
-	path = "envfile_global_1.env"
-	required = false
-
-	[[global.envfile]]
-	path = "envfile_global_2.env"
-	required = true
-`
-	params := &Parameters{
-		ExtIO: &ExtIOFunc{
-			DryRunOutput: buf,
-			OpenFunc: func(fname string) (io.ReadCloser, error) {
-				switch fname {
-				case "testconfig":
-					return ToReadCloser(configData), nil
-				case "envfile_global_2.env":
-					return ToReadCloser("COSMOS=STARS"), nil
-				default:
-					return nil, os.ErrNotExist
-				}
-			},
-		},
-	}
-	app := NewApp(params)
-
-	err := app.Run(newArgs("-c", "testconfig"))
-	require.NoError(t, err)
-
-	envmap := toEnvVars(buf)
-	assert.Equal(t, "STARS", envmap["COSMOS"])
-}
-
-func TestConfigRequiredFileNotFound(t *testing.T) {
-	buf := &bytes.Buffer{}
-
-	configData := `
-[global]
-	[[global.envfile]]
-	path = "envfile_global_1.env"
-	required = false
-
-	[[global.envfile]]
-	path = "envfile_global_2.env"
-	required = true
-`
-	params := &Parameters{
-		ExtIO: &ExtIOFunc{
-			DryRunOutput: buf,
-			OpenFunc: func(fname string) (io.ReadCloser, error) {
-				switch fname {
-				case "testconfig":
-					return ToReadCloser(configData), nil
-				default:
-					return nil, os.ErrNotExist
-				}
-			},
-		},
-	}
-	app := NewApp(params)
-
-	err := app.Run(newArgs("-c", "testconfig"))
-	require.Error(t, err)
-}
-
-func fileNeverExists(string) (io.ReadCloser, error) {
-	return nil, os.ErrNotExist
-}
-
 func TestOverwriteDefaultDeny(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 		},
@@ -314,6 +250,7 @@ func TestOverwriteExplicitDeny(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 		},
@@ -329,6 +266,7 @@ func TestOverwriteExplicitWarn(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 		},
@@ -345,6 +283,7 @@ func TestOverwriteExplicitAllow(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 		},
@@ -361,6 +300,7 @@ func TestOverwriteInvalidPolicy(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 		},
@@ -377,6 +317,7 @@ func TestOverwriteEvnFile(t *testing.T) {
 
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc: func(fname string) (io.ReadCloser, error) {
 				switch fname {
@@ -404,6 +345,7 @@ func TestOverwriteSetInConfig(t *testing.T) {
 `
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc: func(fname string) (io.ReadCloser, error) {
 				switch fname {
@@ -427,6 +369,7 @@ func TestCommandPrompt(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 			InputFunc:    func(string) string { return "BLUE" },
@@ -444,6 +387,7 @@ func TestCommandStdinEnvfile(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 			Stdin:        ToReadCloser("COLOR=BLUE"),
@@ -461,6 +405,7 @@ func TestCommandStdinJSONfile(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 			Stdin:        ToReadCloser(`{"COLOR":"BLUE"}`),
@@ -478,6 +423,7 @@ func TestCommandStdinInvalidFormat(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 			Stdin:        ToReadCloser(`xxx`),
@@ -494,6 +440,7 @@ func TestCommandStdinInvalidOption(t *testing.T) {
 	buf := &bytes.Buffer{}
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
+			Getwd:        dummyGetwd,
 			DryRunOutput: buf,
 			OpenFunc:     fileNeverExists,
 			Stdin:        ToReadCloser(`COLOR=ORANGE`),
@@ -510,24 +457,19 @@ func TestConfigDir(t *testing.T) {
 	configData := `
 [workdir.proj1]
 dirpath = "/path/to/proj1"
-[[workdir.proj1.define]]
-vars = ["COLOR=BLUE"]
+define = ["COLOR=BLUE"]
 
 [workdir.proj1src]
 dirpath = "/path/to/proj1/src/"
-[[workdir.proj1src.define]]
-vars = ["MAGIC=FIFTH"]
+define = ["MAGIC=FIFTH"]
 
 [workdir.proj1srcxxx]
 dirpath = "/path/to/proj1/src/xxx"
-workdir.proj1srcxxx.define = [
-	{vars = ["NOT=SANE"]}
-]
+define = ["NOT=SANE"]
 
 [workdir.proj2]
 dirpath = "/path/to/proj2"
-[[workdir.proj2.define]]
-vars = ["WORDS=TIMELESS"]
+define = ["WORDS=TIMELESS"]
 `
 	buf := &bytes.Buffer{}
 	cwd := "/path/to/proj1/src/"
