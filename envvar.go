@@ -31,11 +31,6 @@ func dumpEnvVars(w io.Writer, vars []*envvar) error {
 type fileOpen func(string) (io.ReadCloser, error) // based on os.Open
 type promptInput func(string) string              // based on prompter.Password
 
-type loadEnvVarsArgs struct {
-	config altenvConfig
-	ext    ExtIOFunc
-}
-
 func loadEnvVars(config altenvConfig, ext ExtIOFunc) ([]*envvar, error) {
 	var envvars []*envvar
 
