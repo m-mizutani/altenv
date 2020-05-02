@@ -17,6 +17,7 @@ type parameters struct {
 	Defines   cli.StringSlice
 	Keychains cli.StringSlice
 	Prompt    string
+	Stdin     string
 
 	Profile               string
 	ConfigPath            string

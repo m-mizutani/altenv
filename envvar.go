@@ -32,19 +32,17 @@ type fileOpen func(string) (io.ReadCloser, error) // based on os.Open
 type promptInput func(string) string              // based on prompter.Password
 
 type loadEnvVarsArgs struct {
-	config    *altenvConfig
-	openFunc  fileOpen
-	inputFunc promptInput
-	queryItem keychainQueryItem
+	config altenvConfig
+	ext    ExtIOFunc
 }
 
-func loadEnvVars(args loadEnvVarsArgs) ([]*envvar, error) {
+func loadEnvVars(config altenvConfig, ext ExtIOFunc) ([]*envvar, error) {
 	var envvars []*envvar
 
 	// Read environment variables
-	for _, f := range args.config.EnvFiles {
+	for _, f := range config.EnvFiles {
 		logger.WithField("path", f.Path).Debug("Read EnvFile")
-		vars, err := readEnvFile(f.Path, args.openFunc)
+		vars, err := readEnvFile(f.Path, ext.OpenFunc)
 		if os.IsNotExist(err) && !f.IsRequired() {
 			logger.WithField("path", f.Path).Debug("EnvFile is not found, but ignore because not required")
 			continue
@@ -55,9 +53,9 @@ func loadEnvVars(args loadEnvVarsArgs) ([]*envvar, error) {
 		envvars = append(envvars, vars...)
 	}
 
-	for _, f := range args.config.JSONFiles {
+	for _, f := range config.JSONFiles {
 		logger.WithField("path", f.Path).Debug("Read JSON file")
-		vars, err := readJSONFile(f.Path, args.openFunc)
+		vars, err := readJSONFile(f.Path, ext.OpenFunc)
 		if os.IsNotExist(err) && !f.IsRequired() {
 			logger.WithField("path", f.Path).Debug("JSON File is not found, but ignore because not required")
 			continue
@@ -67,7 +65,7 @@ func loadEnvVars(args loadEnvVarsArgs) ([]*envvar, error) {
 		envvars = append(envvars, vars...)
 	}
 
-	for _, def := range args.config.Defines {
+	for _, def := range config.Defines {
 		for _, vdef := range def.Vars {
 			logger.WithField("define", vdef).Debug("Set temp variables")
 			v, err := parseDefine(vdef)
@@ -78,11 +76,11 @@ func loadEnvVars(args loadEnvVarsArgs) ([]*envvar, error) {
 		}
 	}
 
-	for _, namespace := range args.config.Keychains {
+	for _, namespace := range config.Keychains {
 		args := getKeyChainValuesArgs{
 			namespace:     namespace,
-			servicePrefix: args.config.KeychainServicePrefix,
-			queryItem:     args.queryItem,
+			servicePrefix: config.KeychainServicePrefix,
+			queryItem:     ext.KeychainQueryItem,
 		}
 		vars, err := getKeyChainValues(args)
 		if err != nil {
@@ -91,10 +89,29 @@ func loadEnvVars(args loadEnvVarsArgs) ([]*envvar, error) {
 		envvars = append(envvars, vars...)
 	}
 
-	if args.config.Prompt != "" {
-		value := args.inputFunc(fmt.Sprintf("Enter %s value", args.config.Prompt))
+	switch config.Stdin {
+	case "json":
+		vars, err := parseJSONFile(ext.Stdin)
+		if err != nil {
+			return nil, errors.Wrap(err, "Fail to parse JSON format from stdin")
+		}
+		envvars = append(envvars, vars...)
+	case "env":
+		vars, err := parseEnvFile(ext.Stdin)
+		if err != nil {
+			return nil, errors.Wrap(err, "Fail to parse EnvFile format from stdin")
+		}
+		envvars = append(envvars, vars...)
+	case "":
+		// nothing to do
+	default:
+		return nil, fmt.Errorf("Invalid input format: `%s`", config.Stdin)
+	}
+
+	if config.Prompt != "" {
+		value := ext.InputFunc(fmt.Sprintf("Enter %s value", config.Prompt))
 		envvars = append(envvars, &envvar{
-			Key:   args.config.Prompt,
+			Key:   config.Prompt,
 			Value: value,
 		})
 	}
@@ -109,7 +126,7 @@ func loadEnvVars(args loadEnvVarsArgs) ([]*envvar, error) {
 				"new": v.Value,
 			}
 
-			switch args.config.overwrite {
+			switch config.overwrite {
 			case overwriteDeny:
 				return nil, fmt.Errorf("Deny to overwrite `%s`, `%s` -> `%s`", v.Key, existValue, v.Value)
 			case overwriteWarn:

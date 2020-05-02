@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"strings"
 
 	"github.com/pkg/errors"
@@ -27,6 +28,10 @@ func readEnvFile(fpath string, open fileOpen) ([]*envvar, error) {
 	}
 	defer fd.Close()
 
+	return parseEnvFile(fd)
+}
+
+func parseEnvFile(fd io.Reader) ([]*envvar, error) {
 	var envvars []*envvar
 	scanner := bufio.NewScanner(fd)
 	lineNo := 0

@@ -44,12 +44,7 @@ func run(params parameters, args []string) error {
 	}
 
 	// Setup environment variables
-	envvars, err := loadEnvVars(loadEnvVarsArgs{
-		config:    masterConfig,
-		openFunc:  params.ExtIO.OpenFunc,
-		inputFunc: params.ExtIO.InputFunc,
-		queryItem: params.ExtIO.KeychainQueryItem,
-	})
+	envvars, err := loadEnvVars(*masterConfig, *params.ExtIO)
 	if err != nil {
 		return err
 	}
@@ -132,6 +127,12 @@ func newApp(params *parameters) *cli.App {
 				Name:        "prompt",
 				Usage:       "Set a variable by prompt. Try --prompt FOO -r dryrun",
 				Destination: &params.Prompt,
+			},
+			&cli.StringFlag{
+				Name:        "input",
+				Aliases:     []string{"i"},
+				Usage:       "Specify stdin format [env|json]",
+				Destination: &params.Stdin,
 			},
 
 			&cli.StringFlag{

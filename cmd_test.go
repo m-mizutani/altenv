@@ -439,3 +439,69 @@ func TestCommandPrompt(t *testing.T) {
 	envmap := toEnvVars(buf)
 	assert.Equal(t, "BLUE", envmap["COLOR"])
 }
+
+func TestCommandStdinEnvfile(t *testing.T) {
+	buf := &bytes.Buffer{}
+	params := &Parameters{
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc:     fileNeverExists,
+			Stdin:        ToReadCloser("COLOR=BLUE"),
+		},
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("-i", "env"))
+	require.NoError(t, err)
+	envmap := toEnvVars(buf)
+	assert.Equal(t, "BLUE", envmap["COLOR"])
+}
+
+func TestCommandStdinJSONfile(t *testing.T) {
+	buf := &bytes.Buffer{}
+	params := &Parameters{
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc:     fileNeverExists,
+			Stdin:        ToReadCloser(`{"COLOR":"BLUE"}`),
+		},
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("-i", "json"))
+	require.NoError(t, err)
+	envmap := toEnvVars(buf)
+	assert.Equal(t, "BLUE", envmap["COLOR"])
+}
+
+func TestCommandStdinInvalidFormat(t *testing.T) {
+	buf := &bytes.Buffer{}
+	params := &Parameters{
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc:     fileNeverExists,
+			Stdin:        ToReadCloser(`xxx`),
+		},
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("-i", "env"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Fail parse envfile")
+}
+
+func TestCommandStdinInvalidOption(t *testing.T) {
+	buf := &bytes.Buffer{}
+	params := &Parameters{
+		ExtIO: &ExtIOFunc{
+			DryRunOutput: buf,
+			OpenFunc:     fileNeverExists,
+			Stdin:        ToReadCloser(`COLOR=ORANGE`),
+		},
+	}
+	app := NewApp(params)
+
+	err := app.Run(newArgs("-i", "xxx"))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "Invalid input format")
+}

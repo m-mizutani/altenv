@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"io"
 
 	"github.com/sirupsen/logrus"
 )
@@ -13,6 +14,10 @@ func readJSONFile(fpath string, open fileOpen) ([]*envvar, error) {
 	}
 	defer fd.Close()
 
+	return parseJSONFile(fd)
+}
+
+func parseJSONFile(fd io.Reader) ([]*envvar, error) {
 	var jdata map[string]string
 
 	if err := json.NewDecoder(fd).Decode(&jdata); err != nil {
