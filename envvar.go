@@ -150,24 +150,26 @@ func loadKeychain(keychains []string, servicePrefix string, ext ExtIOFunc) loadR
 func loadStdin(stdinFmt string, ext ExtIOFunc) loadResult {
 	var envvars []*envvar
 
+	parser := func(io.Reader) ([]*envvar, error) { return nil, nil }
+
 	switch stdinFmt {
 	case "json":
-		vars, err := parseJSONFile(ext.Stdin)
-		if err != nil {
-			return loadResult{nil, errors.Wrap(err, "Fail to parse JSON format from stdin")}
-		}
-		envvars = append(envvars, vars...)
+		parser = parseJSONFile
 	case "env":
-		vars, err := parseEnvFile(ext.Stdin)
-		if err != nil {
-			return loadResult{nil, errors.Wrap(err, "Fail to parse EnvFile format from stdin")}
-		}
-		envvars = append(envvars, vars...)
+		parser = parseEnvFile
+	case "aws-assume-role":
+		parser = parseAwsAssumeRole
 	case "":
 		// nothing to do
 	default:
 		return loadResult{nil, fmt.Errorf("Invalid input format: `%s`", stdinFmt)}
 	}
+
+	vars, err := parser(ext.Stdin)
+	if err != nil {
+		return loadResult{nil, errors.Wrap(err, "Fail to parse data from stdin")}
+	}
+	envvars = append(envvars, vars...)
 
 	return loadResult{envvars, nil}
 }

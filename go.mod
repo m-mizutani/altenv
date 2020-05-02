@@ -4,6 +4,7 @@ go 1.14
 
 require (
 	github.com/Songmu/prompter v0.3.0
+	github.com/aws/aws-sdk-go v1.30.19
 	github.com/keybase/go-keychain v0.0.0-20200325143049-65d7292bc904
 	github.com/pelletier/go-toml v1.7.0
 	github.com/pkg/errors v0.9.1
