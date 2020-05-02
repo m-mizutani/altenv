@@ -104,10 +104,10 @@ There are 3 types of section in configuration file.
 
 ### Configuration fields
 
-- `envfile` (string array): Specify envfile foramt file(s). (multiple lines with `KEY1=ABC` style)
-- `jsonfile` (string array): Specify json format file(S). Only map format of string key and value is acceptable.
-- `define` (string array): Specify environment variable(s) directly with `KEY1=ABC` style.
-- `keychain` (string array): Specify namespace(s) for environment variables stored in Keychain. See *Use Keychain* part.
+- `envfile` (array of string): Specify envfile foramt file(s). (multiple lines with `KEY1=ABC` style)
+- `jsonfile` (array of string): Specify json format file(S). Only map format of string key and value is acceptable.
+- `define` (array of string): Specify environment variable(s) directly with `KEY1=ABC` style.
+- `keychain` (array of string): Specify namespace(s) for environment variables stored in Keychain. See *Use Keychain* part.
 - `overwrite` (string, [`deny`|`warn`|`allow`]): Specify Overwrite policy. Default is `deny` and `altenv` abort program when environment variable key conflict. `warn` is only output warning message. `allow` allows overwrite when collision.
 - `keychainServicePrefix`: Specify prefix of service name of Keychain. Default is `altenv.`
 - `dirpath` (string): Required in only `workdir` section. Specify prefix of working directoy.
