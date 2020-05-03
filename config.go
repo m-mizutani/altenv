@@ -93,6 +93,9 @@ func (x *altenvConfig) merge(src altenvConfig) {
 	if src.Stdin != "" {
 		x.Stdin = src.Stdin
 	}
+	if src.Prompt != "" {
+		x.Prompt = src.Prompt
+	}
 }
 
 func (x *altenvConfig) finalize() error {
