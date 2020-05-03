@@ -58,13 +58,13 @@ func loadEnvVars(config altenvConfig, ext ExtIOFunc) ([]*envvar, error) {
 		if existValue, ok := varmap[v.Key]; ok {
 			logFields := logrus.Fields{
 				"key": v.Key,
-				"old": existValue,
+				"old": existValue.Value,
 				"new": v.Value,
 			}
 
 			switch config.overwrite {
 			case overwriteDeny:
-				return nil, fmt.Errorf("Deny to overwrite `%s`, `%s` -> `%s`", v.Key, existValue, v.Value)
+				return nil, fmt.Errorf("Deny to overwrite `%s`: `%s` -> `%s`", v.Key, existValue.Value, v.Value)
 			case overwriteWarn:
 				logger.WithFields(logFields).Warn("Overwrote environment variable")
 			case overwriteAllow:
