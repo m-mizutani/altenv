@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	altenvVersion      = "1.0.1"
+	altenvVersion      = "1.0.2"
 	defaultProfileName = "default"
 )
 
