@@ -456,8 +456,12 @@ func TestCommandStdinInvalidOption(t *testing.T) {
 func TestConfigDir(t *testing.T) {
 	configData := `
 [workdir.proj1]
-dirpath = "/path/to/proj1"
+dirpath = "/path/to/proj1/"
 define = ["COLOR=BLUE"]
+
+[workdir.proj1srcany]
+dirpath = "/path/to/proj1/src"
+define = ["FOO=BAA"]
 
 [workdir.proj1src]
 dirpath = "/path/to/proj1/src/"
@@ -472,7 +476,7 @@ dirpath = "/path/to/proj2"
 define = ["WORDS=TIMELESS"]
 `
 	buf := &bytes.Buffer{}
-	cwd := "/path/to/proj1/src/"
+	cwd := "/path/to/proj1/src"
 	params := &Parameters{
 		ExtIO: &ExtIOFunc{
 			DryRunOutput: buf,
@@ -496,6 +500,7 @@ define = ["WORDS=TIMELESS"]
 	envmap := toEnvVars(buf)
 	assert.Equal(t, "BLUE", envmap["COLOR"])
 	assert.Equal(t, "FIFTH", envmap["MAGIC"])
+	assert.Equal(t, "BAA", envmap["FOO"])
 	assert.NotContains(t, envmap, "WORDS")
 	assert.NotContains(t, envmap, "NOT")
 }

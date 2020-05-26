@@ -31,6 +31,9 @@ func loadConfigFile(path string, profile string, ext ExtIOFunc) (*altenvConfig, 
 	if err != nil {
 		return nil, errors.Wrap(err, "Fail to get CWD")
 	}
+	if !strings.HasSuffix(cwd, "/") {
+		cwd += "/" // Add slash at tail if not exists
+	}
 
 	return parseConfigFile(fd, profile, cwd)
 }
