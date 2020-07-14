@@ -156,4 +156,4 @@ PRFILE_IS=MY_TEST
 ## License
 
 - MIT License
-- Author: mizutani@sfc.wide.ad.jp
+- Author: mizutani@hey.com
