@@ -42,9 +42,8 @@ func putKeyChainValues(args putKeyChainValuesArgs) error {
 			// Duplicate
 			query := keychain.NewItem()
 			query.SetSecClass(keychain.SecClassGenericPassword)
-			query.SetService(keychainServiceNamePrefix + args.namespace)
+			query.SetService(prefix + args.namespace)
 			query.SetAccount(v.Key)
-			// query.SetAccessGroup(keychainLabel)
 			query.SetMatchLimit(keychain.MatchLimitAll)
 
 			if err := args.updateItem(query, item); err != nil {
