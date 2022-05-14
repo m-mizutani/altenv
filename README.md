@@ -1,5 +1,7 @@
 # altenv [![Travis-CI](https://travis-ci.org/m-mizutani/altenv.svg)](https://travis-ci.org/m-mizutani/altenv) [![Report card](https://goreportcard.com/badge/github.com/m-mizutani/altenv)](https://goreportcard.com/report/github.com/m-mizutani/altenv)
 
+**NOTE: This product has been deprecated and archived. Use [zenv](https://github.com/m-mizutani/zenv) instead.**
+
 CLI Environment Variable Controller in Go
 
 ```sh
